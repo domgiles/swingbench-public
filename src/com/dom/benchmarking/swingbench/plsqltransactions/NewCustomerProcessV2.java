@@ -140,6 +140,7 @@ public class NewCustomerProcessV2 extends OrderEntryProcess {
                     sucessfulTransaction = false;
                 this.commit(connection);
             } catch (Exception se) {
+                logger.log(Level.FINE, "Exception occured when attempting to call orderentry.newcustomer function in package", se);
                 throw new SwingBenchException(se);
             }
 

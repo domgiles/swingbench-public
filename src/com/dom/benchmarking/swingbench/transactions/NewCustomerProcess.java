@@ -106,118 +106,112 @@ public class NewCustomerProcess extends OrderEntryProcess {
         initJdbcTask();
 
         long executeStart = System.nanoTime();
-        try {
-            try (PreparedStatement seqPs = connection.prepareStatement("select customer_seq.nextval, address_seq.nextval, card_details_seq.nextval from dual");
-                 PreparedStatement insPs1 = connection.prepareStatement("insert into customers (customer_id,\n" +
-                         "                       cust_first_name,\n" +
-                         "                       cust_last_name,\n" +
-                         "                       nls_language,\n" +
-                         "                       nls_territory,\n" +
-                         "                       credit_limit,\n" +
-                         "                       cust_email,\n" +
-                         "                       account_mgr_id,\n" +
-                         "                       customer_since,\n" +
-                         "                       customer_class,\n" +
-                         "                       suggestions,\n" +
-                         "                       dob,\n" +
-                         "                       mailshot,\n" +
-                         "                       partner_mailshot,\n" +
-                         "                       preferred_address,\n" +
-                         "                       preferred_card)\n" +
-                         "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                 PreparedStatement insPs2 = connection.prepareStatement("INSERT INTO ADDRESSES (address_id,\n" +
-                         "                       customer_id,\n" +
-                         "                       date_created,\n" +
-                         "                       house_no_or_name,\n" +
-                         "                       street_name,\n" +
-                         "                       town,\n" +
-                         "                       county,\n" +
-                         "                       country,\n" +
-                         "                       post_code,\n" +
-                         "                       zip_code)\n" +
-                         "VALUES (?, ?, TRUNC(SYSDATE, 'MI'), ?, ?, ?, ?, ?, ?, NULL)");
-                 PreparedStatement insPs3 = connection.prepareStatement("INSERT INTO CARD_DETAILS (card_id,\n" +
-                         "                          customer_id,\n" +
-                         "                          card_type,\n" +
-                         "                          card_number,\n" +
-                         "                          expiry_date,\n" +
-                         "                          is_valid,\n" +
-                         "                          security_code)\n" +
-                         "VALUES (?, ?, ?, ?, trunc(SYSDATE + ?), ?, ?)");
-                 ResultSet rs = seqPs.executeQuery()) {
+        try (PreparedStatement seqPs = connection.prepareStatement("select customer_seq.nextval, address_seq.nextval, card_details_seq.nextval from dual");
+             PreparedStatement insPs1 = connection.prepareStatement("insert into customers (customer_id,\n" +
+                     "                       cust_first_name,\n" +
+                     "                       cust_last_name,\n" +
+                     "                       nls_language,\n" +
+                     "                       nls_territory,\n" +
+                     "                       credit_limit,\n" +
+                     "                       cust_email,\n" +
+                     "                       account_mgr_id,\n" +
+                     "                       customer_since,\n" +
+                     "                       customer_class,\n" +
+                     "                       suggestions,\n" +
+                     "                       dob,\n" +
+                     "                       mailshot,\n" +
+                     "                       partner_mailshot,\n" +
+                     "                       preferred_address,\n" +
+                     "                       preferred_card)\n" +
+                     "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+             PreparedStatement insPs2 = connection.prepareStatement("INSERT INTO ADDRESSES (address_id,\n" +
+                     "                       customer_id,\n" +
+                     "                       date_created,\n" +
+                     "                       house_no_or_name,\n" +
+                     "                       street_name,\n" +
+                     "                       town,\n" +
+                     "                       county,\n" +
+                     "                       country,\n" +
+                     "                       post_code,\n" +
+                     "                       zip_code)\n" +
+                     "VALUES (?, ?, TRUNC(SYSDATE, 'MI'), ?, ?, ?, ?, ?, ?, NULL)");
+             PreparedStatement insPs3 = connection.prepareStatement("INSERT INTO CARD_DETAILS (card_id,\n" +
+                     "                          customer_id,\n" +
+                     "                          card_type,\n" +
+                     "                          card_number,\n" +
+                     "                          expiry_date,\n" +
+                     "                          is_valid,\n" +
+                     "                          security_code)\n" +
+                     "VALUES (?, ?, ?, ?, trunc(SYSDATE + ?), ?, ?)");
+             ResultSet rs = seqPs.executeQuery()) {
 
-                rs.next();
-                custID = rs.getLong(1);
-                addressID = rs.getLong(2);
-                cardID = rs.getLong(3);
+            rs.next();
+            custID = rs.getLong(1);
+            addressID = rs.getLong(2);
+            cardID = rs.getLong(3);
 
-                addSelectStatements(1);
-                thinkSleep();
+            addSelectStatements(1);
+            thinkSleep();
 
-                Date dob = new Date(System.currentTimeMillis() - (RandomGenerator.randomLong(18, 65) * 31556952000L));
-                Date custSince = new Date(System.currentTimeMillis() - (RandomGenerator.randomLong(1, 4) * 31556952000L));
+            Date dob = new Date(System.currentTimeMillis() - (RandomGenerator.randomLong(18, 65) * 31556952000L));
+            Date custSince = new Date(System.currentTimeMillis() - (RandomGenerator.randomLong(1, 4) * 31556952000L));
 
-                insPs1.setLong(1, custID);
-                insPs1.setString(2, firstName);
-                insPs1.setString(3, lastName);
-                insPs1.setString(4, nls.language);
-                insPs1.setString(5, nls.territory);
-                insPs1.setInt(6, RandomGenerator.randomInteger(MIN_CREDITLIMIT, MAX_CREDITLIMIT));
-                insPs1.setString(7, firstName + "." + lastName + "@" + "oracle.com");
-                insPs1.setInt(8, RandomGenerator.randomInteger(MIN_SALESID, MAX_SALESID));
-                insPs1.setDate(9, custSince);
-                insPs1.setString(10, "Ocasional");
-                insPs1.setString(11, "Music");
-                insPs1.setDate(12, dob);
-                insPs1.setString(13, "Y");
-                insPs1.setString(14, "N");
-                insPs1.setLong(15, addressID);
-                insPs1.setLong(16, custID);
+            insPs1.setLong(1, custID);
+            insPs1.setString(2, firstName);
+            insPs1.setString(3, lastName);
+            insPs1.setString(4, nls.language);
+            insPs1.setString(5, nls.territory);
+            insPs1.setInt(6, RandomGenerator.randomInteger(MIN_CREDITLIMIT, MAX_CREDITLIMIT));
+            insPs1.setString(7, firstName + "." + lastName + "@" + "oracle.com");
+            insPs1.setInt(8, RandomGenerator.randomInteger(MIN_SALESID, MAX_SALESID));
+            insPs1.setDate(9, custSince);
+            insPs1.setString(10, "Ocasional");
+            insPs1.setString(11, "Music");
+            insPs1.setDate(12, dob);
+            insPs1.setString(13, "Y");
+            insPs1.setString(14, "N");
+            insPs1.setLong(15, addressID);
+            insPs1.setLong(16, custID);
 
-                insPs1.execute();
-                addInsertStatements(1);
+            insPs1.execute();
+            addInsertStatements(1);
 
-                insPs2.setLong(1, addressID);
-                insPs2.setLong(2, custID);
-                insPs2.setInt(3, RandomGenerator.randomInteger(1, HOUSE_NO_RANGE));
-                insPs2.setString(4, "Street Name");
-                insPs2.setString(5, town);
-                insPs2.setString(6, county);
-                insPs2.setString(7, country);
-                insPs2.setString(8, "Postcode");
-                insPs2.execute();
-                insPs2.close();
-                addInsertStatements(1);
+            insPs2.setLong(1, addressID);
+            insPs2.setLong(2, custID);
+            insPs2.setInt(3, RandomGenerator.randomInteger(1, HOUSE_NO_RANGE));
+            insPs2.setString(4, "Street Name");
+            insPs2.setString(5, town);
+            insPs2.setString(6, county);
+            insPs2.setString(7, country);
+            insPs2.setString(8, "Postcode");
+            insPs2.execute();
+            insPs2.close();
+            addInsertStatements(1);
 
 
-                insPs3.setLong(1, cardID);
-                insPs3.setLong(2, custID);
-                insPs3.setString(3, "Visa (Debit)");
-                insPs3.setLong(4, RandomGenerator.randomLong(1111111111L, 9999999999L));
-                insPs3.setInt(5, RandomGenerator.randomInteger(365, 1460));
-                insPs3.setString(6, "Y");
-                insPs3.setInt(7, RandomGenerator.randomInteger(1111, 9999));
-                insPs3.execute();
-                insPs3.close();
-                addInsertStatements(1);
+            insPs3.setLong(1, cardID);
+            insPs3.setLong(2, custID);
+            insPs3.setString(3, "Visa (Debit)");
+            insPs3.setLong(4, RandomGenerator.randomLong(1111111111L, 9999999999L));
+            insPs3.setInt(5, RandomGenerator.randomInteger(365, 1460));
+            insPs3.setString(6, "Y");
+            insPs3.setInt(7, RandomGenerator.randomInteger(1111, 9999));
+            insPs3.execute();
+            insPs3.close();
+            addInsertStatements(1);
 
-                connection.commit();
-                addCommitStatements(1);
-                thinkSleep();
-                logon(connection, custID);
-                addInsertStatements(1);
-                addCommitStatements(1);
-                getCustomerDetails(connection, custID);
-                addSelectStatements(1);
-
-            } catch (SQLException se) {
-                logger.log(Level.FINE, String.format("Exception : %s", se.getMessage()));
-                logger.log(Level.FINEST, "SQLException thrown : %s", se);
-                throw new SwingBenchException(se);
-            }
-
+            connection.commit();
+            addCommitStatements(1);
+            thinkSleep();
+            logon(connection, custID);
+            addInsertStatements(1);
+            addCommitStatements(1);
+            getCustomerDetails(connection, custID);
+            addSelectStatements(1);
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
-        } catch (SwingBenchException sbe) {
+        } catch (SQLException sbe) {
+            logger.log(Level.FINE, String.format("Exception : %s", sbe.getMessage()));
+            logger.log(Level.FINEST, "SQLException thrown : %s", sbe);
             try {
                 addRollbackStatements(1);
                 connection.rollback();

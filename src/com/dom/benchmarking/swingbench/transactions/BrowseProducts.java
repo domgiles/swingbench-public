@@ -8,7 +8,6 @@ import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,33 +37,28 @@ public class BrowseProducts extends OrderEntryProcess {
         long executeStart = System.nanoTime();
 
         try {
-            try {
-                custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
-                logon(connection, custID);
-                addInsertStatements(1);
-                addCommitStatements(1);
-                getCustomerDetails(connection, custID);
+            custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
+            logon(connection, custID);
+            addInsertStatements(1);
+            addCommitStatements(1);
+            getCustomerDetails(connection, custID);
+            addSelectStatements(1);
+            thinkSleep();
+
+            int numOfBrowseCategorys = RandomGenerator.randomInteger(1, MAX_BROWSE_CATEGORY);
+
+            for (int i = 0; i < numOfBrowseCategorys; i++) {
+                getProductDetailsByID(connection, RandomGenerator.randomInteger(MIN_PROD_ID, MAX_PROD_ID));
                 addSelectStatements(1);
                 thinkSleep();
-
-                int numOfBrowseCategorys = RandomGenerator.randomInteger(1, MAX_BROWSE_CATEGORY);
-
-                for (int i = 0; i < numOfBrowseCategorys; i++) {
-                    getProductDetailsByID(connection, RandomGenerator.randomInteger(MIN_PROD_ID, MAX_PROD_ID));
-                    addSelectStatements(1);
-                    thinkSleep();
-                }
-
-            } catch (SQLException se) {
-                logger.log(Level.FINE, String.format("Exception : ", se.getMessage()));
-                logger.log(Level.FINEST, "SQLException thrown : ", se);
-                throw new SwingBenchException(se);
             }
 
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
-        } catch (SwingBenchException sbe) {
+        } catch (SQLException se) {
+            logger.log(Level.FINE, String.format("Exception : ", se.getMessage()));
+            logger.log(Level.FINEST, "SQLException thrown : ", se);
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), false, getInfoArray()));
-            throw new SwingBenchException(sbe.getMessage());
+            throw new SwingBenchException(se.getMessage());
         }
     }
 

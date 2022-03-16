@@ -10,7 +10,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -19,9 +18,6 @@ import java.util.logging.Logger;
 
 public class BrowseAndUpdateOrders extends OrderEntryProcess {
     private static final Logger logger = Logger.getLogger(BrowseAndUpdateOrders.class.getName());
-    private PreparedStatement liPs = null;
-    private PreparedStatement upPs = null;
-    private PreparedStatement upPs2 = null;
 
     public BrowseAndUpdateOrders() {
     }
@@ -38,54 +34,51 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
     public void execute(Map params) throws SwingBenchException {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         long custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
-        ResultSet rs = null;
         initJdbcTask();
 
         long executeStart = System.nanoTime();
 
-        try {
-            try {
-                logon(connection, custID);
-                addInsertStatements(1);
-                addCommitStatements(1);
-                getCustomerDetails(connection, custID);
-                getAddressDetails(connection, custID);
-                List<Long> orders = getOrdersByCustomer(connection, custID);
-                addSelectStatements(3);
-                if (orders.size() > 0) {
-                    Long selectedOrder = orders.get(RandomGenerator.randomInteger(0, orders.size()));
-                    liPs = connection.prepareStatement(
-                            "select   ORDER_ID,           \n" +
-                                    "        LINE_ITEM_ID,           \n" +
-                                    "        PRODUCT_ID,           \n" +
-                                    "        UNIT_PRICE,           \n" +
-                                    "        QUANTITY,DISPATCH_DATE,     \n" +
-                                    "        RETURN_DATE,     \n" +
-                                    "        GIFT_WRAP,     \n" +
-                                    "        CONDITION,     \n" +
-                                    "        SUPPLIER_ID,     \n" +
-                                    "        ESTIMATED_DELIVERY           \n" +
-                                    "      from order_items           \n" +
-                                    "      where order_id = ?           \n" +
-                                    "      and rownum < 5");
-                    liPs.setLong(1, selectedOrder);
-                    rs = liPs.executeQuery();
+        try (PreparedStatement liPs = connection.prepareStatement(
+                "select   order_id,           \n" +
+                        "        line_item_id,           \n" +
+                        "        product_id,           \n" +
+                        "        unit_price,           \n" +
+                        "        quantity,dispatch_date,     \n" +
+                        "        return_date,     \n" +
+                        "        gift_wrap,     \n" +
+                        "        condition,     \n" +
+                        "        supplier_id,     \n" +
+                        "        estimated_delivery           \n" +
+                        "      from order_items           \n" +
+                        "      where order_id = ?           \n" +
+                        "      and rownum < 5");
+             PreparedStatement upPs = connection.prepareStatement(
+                     "update order_items           \n" +
+                             "        set quantity = quantity + 1           \n" +
+                             "        where order_items.order_id = ?           \n" +
+                             "        and order_items.line_item_id = ?");
+             PreparedStatement upPs2 = connection.prepareStatement(
+                     "update orders           \n" +
+                             "        set order_total = order_total + ?           \n" +
+                             "        where order_Id = ?")) {
+            logon(connection, custID);
+            addInsertStatements(1);
+            addCommitStatements(1);
+            getCustomerDetails(connection, custID);
+            getAddressDetails(connection, custID);
+            List<Long> orders = getOrdersByCustomer(connection, custID);
+            addSelectStatements(3);
+            if (orders.size() > 0) {
+                Long selectedOrder = orders.get(RandomGenerator.randomInteger(0, orders.size()));
+                liPs.setLong(1, selectedOrder);
+                try (ResultSet rs = liPs.executeQuery()) {
                     addSelectStatements(1);
                     if (rs.next()) {
                         Long lit = rs.getLong(2);
                         Float up = rs.getFloat(4);
-                        upPs = connection.prepareStatement(
-                                "update order_items           \n" +
-                                        "        set quantity = quantity + 1           \n" +
-                                        "        where order_items.ORDER_Id = ?           \n" +
-                                        "        and order_items.LINE_ITEM_ID = ?");
                         upPs.setLong(1, selectedOrder);
                         upPs.setLong(2, lit);
                         upPs.executeUpdate();
-                        upPs2 = connection.prepareStatement(
-                                "update orders           \n" +
-                                        "        set order_total = order_total + ?           \n" +
-                                        "        where order_Id = ?");
                         upPs2.setFloat(1, up);
                         upPs2.setLong(2, selectedOrder);
                         addUpdateStatements(2);
@@ -93,28 +86,12 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
                         addCommitStatements(1);
                     }
                 }
-                addSelectStatements(1);
-            } catch (SQLException se) {
-                logger.log(Level.FINE, String.format("Exception : ", se.getMessage()));
-                logger.log(Level.FINEST, "SQLException thrown : ", se);
-                throw new SwingBenchException(se);
-            } finally {
-                hardClose(rs);
-                hardClose(liPs);
-                hardClose(upPs);
-                hardClose(upPs2);
             }
-
+            addSelectStatements(1);
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
-        } catch (SwingBenchException sbe) {
-            try {
-                addRollbackStatements(1);
-                connection.rollback();
-            } catch (SQLException er) {
-                logger.log(Level.FINE, "Unable to rollback transaction");
-            }
+        } catch (SQLException se) {
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), false, getInfoArray()));
-            throw new SwingBenchException(sbe.getMessage());
+            throw new SwingBenchException(se.getMessage());
         }
     }
 

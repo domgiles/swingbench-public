@@ -1,13 +1,11 @@
 package com.dom.benchmarking.swingbench.dsstransactions;
 
-
 import com.dom.benchmarking.swingbench.kernel.DatabaseTransaction;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 import com.dom.util.OracleUtilities;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -16,13 +14,13 @@ import java.util.logging.Logger;
 
 public abstract class SalesHistory extends DatabaseTransaction {
     private static final Logger logger = Logger.getLogger(SalesHistory.class.getName());
-    private static List<String> weeks = new ArrayList<String>();
-    private static List<String> months = new ArrayList<String>();
-    private static List<String> countries = new ArrayList<String>();
-    private static List<String> channels = new ArrayList<String>();
-    private static List<String> years = new ArrayList<String>();
-    private static List<String> products = new ArrayList<String>();
-    private static List<String> quarters = new ArrayList<String>();
+    private static List<String> weeks = new ArrayList<>();
+    private static List<String> months = new ArrayList<>();
+    private static List<String> countries = new ArrayList<>();
+    private static List<String> channels = new ArrayList<>();
+    private static List<String> years = new ArrayList<>();
+    private static List<String> products = new ArrayList<>();
+    private static List<String> quarters = new ArrayList<>();
     private static boolean dataCached = false;
     protected static Object lock = new Object();
 
@@ -31,35 +29,6 @@ public abstract class SalesHistory extends DatabaseTransaction {
 
     protected void cacheData(Connection connection) throws SQLException {
         years = OracleUtilities.cacheColumnDistinctValues(connection, "TIMES", "CALENDAR_YEAR");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2013");
-        //        years.add("2012");
-        //        years.add("2012");
-        //        years.add("2012");
-        //        years.add("2012");
-        //        years.add("2012");
-        //        years.add("2012");
-        //        years.add("2011");
-        //        years.add("2011");
-        //        years.add("2011");
-        //        years.add("2010");
-        //        years.add("2010");
-        //        years.add("2010");
-        //        years.add("2010");
-        //        years.add("2012"); // Skew data to current year
-        //        years.add("2012");
-        //        years.add("2011");
-        //        years.add("2009");
-        //        years.add("2009");
-        //        years.add("2009");
-        //        years.add("2008");
-        //        years.add("2008");
         weeks = OracleUtilities.cacheColumnDistinctValues(connection, "TIMES", "CALENDAR_WEEK_NUMBER");
         months = OracleUtilities.cacheColumnDistinctValues(connection, "TIMES", "CALENDAR_MONTH_DESC");
         quarters = OracleUtilities.cacheColumnDistinctValues(connection, "TIMES", "CALENDAR_QUARTER_DESC");

@@ -30,6 +30,7 @@ public class PeriodToPeriodComparison extends SalesHistory {
                     if (!isDataCached()) {
                         Connection connection = (Connection) param.get(SwingBenchTask.JDBC_CONNECTION);
                         cacheData(connection);
+                        logger.log(Level.FINE, "Cached Times Data");
                     }
                 }
             }
