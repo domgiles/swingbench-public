@@ -24,10 +24,11 @@ On Microsoft Windows use WinZip to perform this operation.
 
 ### Setting Up
 Before you can run a test/benchmark you need to create a schema and install a set of sample data. This is done via the wizards that are installed in the bin directory. They can be run in command line or graphical modes. There are four wizards to choose from.
-* oewizard : This will install a simple order entry schema that is used to create a heavy write workload
-* shwizard : This will install a simple star schema that is used to create a analytics workload
-* jsonwizard : This will install a simple JSON schema that is used to create a JSON CRUD workload
-* tpcdswizard : This will in a TPC-DS like schema that is used to create a complex analytics workload
+* oewizard : Installs a simple order entry schema that is used to create a heavy write workload
+* shwizard : Installs a simple star schema that is used to create a analytics workload
+* jsonwizard : Installs a simple JSON schema that is used to create a JSON CRUD workload
+* tpcdswizard : Installs a TPC-DS like schema that is used to create a complex analytics workload
+* tpchwizard : Installs a TPC-H like schema that is used to create a medium complexity analytics workload
 
 To run any of the wizards either double click on the one of the wizards described above if you are running on a GUI with a file manager. Or run it from the command line with
 ```shell script
@@ -90,7 +91,9 @@ charbench has similar parameters to swingbench but with a few additions. Like sw
 ```shell script
 ./charbench -h
 ```
-By default swingbench outputs the results of a run in XMl to the "Output" tab in the UI whilst charbench by default will output the results to a file called results.xml. You can change the location of the results file in charbench with the ```-r``` c0mmand line parameter.
+By default swingbench outputs the results of a run in XML to the "Output" tab in the UI whilst charbench by default will output the results to a file called results.xml. You can change the location of the results file in charbench with the ```-r``` c0mmand line parameter.
+
+**NOTE:** In the latest build of charbench now uses colour output to make it easier to highlight errors and parse the output. IT can be disabled with the ```-nc``` command line option. 
 
 ### Formatting the Results File
 Whilst XML is simple to parse by a computer it is not necessarily ideal for humans. I supply a utility called ```results2pdf``` in the same bin/winbin directory. This allows you to convert the XML of a run into a pdf file. For example suppose you generated a XML files called results0001.xml to convert it into a pdf file called resultsrun1.pdf you would use a command similar to the own below

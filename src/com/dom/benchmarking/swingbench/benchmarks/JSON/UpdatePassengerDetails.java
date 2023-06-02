@@ -10,6 +10,7 @@ import oracle.soda.OracleCollection;
 import oracle.soda.OracleDatabase;
 import oracle.soda.OracleDocument;
 import oracle.soda.rdbms.OracleRDBMSClient;
+import oracle.sql.json.*;
 
 import javax.json.*;
 import java.io.File;
@@ -54,9 +55,10 @@ public class UpdatePassengerDetails extends DatabaseTransaction {
         lock.lock();
         if (passengerRange == null) {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT MAX(us.last_number)\n" +
-                            "FROM user_sequences us\n" +
-                            "WHERE us.sequence_name = 'PASSENGER_SEQ'")) {
+                    "SELECT METADATA_VALUE\n" +
+                            "FROM PASSENGER_METADATA\n" +
+                            "WHERE METADATA_KEY = 'MAX_PASSENGER_COUNT'"
+            )) {
                 ResultSet rs = ps.executeQuery();
                 rs.next();
                 passengerRange = rs.getLong(1);
@@ -80,6 +82,8 @@ public class UpdatePassengerDetails extends DatabaseTransaction {
         lock.unlock();
     }
 
+    static OracleJsonFactory FACTORY = new OracleJsonFactory();
+
     @Override
     public void execute(Map<String, Object> params) throws SwingBenchException {
 
@@ -96,36 +100,43 @@ public class UpdatePassengerDetails extends DatabaseTransaction {
 
             executeStart = System.nanoTime();
             try {
-
                 OracleDatabase database = client.getDatabase(connection);
                 OracleCollection collection = database.openCollection("PASSENGERCOLLECTION");
                 OracleDocument doc = collection.find()
                         .key(passengerKey.toString())
                         .getOne();
+
                 addSelectStatements(1);
                 if (doc != null) {
-                    JsonBuilderFactory jsonfactory = Json.createBuilderFactory(null);
-                    JsonReader jsonReader = Json.createReader(new StringReader(doc.getContentAsString()));
-                    JsonObject passenger = jsonReader.readObject();
-                    // JsonObjects are immutable (yuck) so we'll need to clone everything
-                    // Clone everything apart from the array we want to update
-                    JsonObjectBuilder clonedPassenger = cloneJson(passenger, "FlightHistory");
-                    // Now clone this array
-                    JsonArrayBuilder clonedArray = cloneArray(passenger, "FlightHistory");
-                    //Now add an additional flight
-                    JsonObject clonedJSON = clonedPassenger.add("FlightHistory", clonedArray.add(jsonfactory.createObjectBuilder()
-                            .add("FlightDate", flightDate)
-                            .add("Airport", USAirport))
-                            .add(jsonfactory.createObjectBuilder()
-                                    .add("FlightDate", returnFlightDate)
-                                    .add("Airport", nonUSAirport)))
-                            .build();
-                    //JsonObject clonedJSON = clonedPassenger.add("FlightHistory",clonedArray).build();
-                    OracleDocument document = database.createDocumentFromString(clonedJSON.toString());
-                    //collection.find().key(passengerKey.toString()).version("v1").replaceOne(document);
-                    collection.find()
-                            .key(passengerKey.toString())
-                            .replaceOne(document);
+                    String version = doc.getVersion();
+                    OracleJsonObject obj = doc.getContentAs(OracleJsonObject.class);
+                    obj = FACTORY.createObject(obj); // modifiable copy
+
+                    OracleJsonValue flightHistory = obj.get("FlightHistory");
+                    OracleJsonArray content;
+                    if (flightHistory == null) {
+                        content = FACTORY.createArray();
+                    } else if (flightHistory.getOracleJsonType() == OracleJsonValue.OracleJsonType.ARRAY) {
+                        content = flightHistory.asJsonArray();
+                    } else {
+                        content = FACTORY.createArray();
+                        content.add(flightHistory);
+                    }
+
+                    OracleJsonObject newFlight = FACTORY.createObject();
+                    newFlight.put("FlightDate", flightDate);
+                    newFlight.put("Airport", USAirport);
+                    OracleJsonObject returnFlight = FACTORY.createObject();
+                    returnFlight.put("FlightDate", returnFlightDate);
+                    returnFlight.put("Airport", nonUSAirport);
+                    content.add(newFlight);
+                    content.add(returnFlight);
+
+                    obj.put("FlightHistory", content);
+                    OracleDocument document = database.createDocumentFrom(obj);
+
+                    collection.find().key(passengerKey.toString()).version(version).replaceOne(document);
+
                     addUpdateStatements(1);
                     connection.commit();
                     addCommitStatements(1);
@@ -133,6 +144,7 @@ public class UpdatePassengerDetails extends DatabaseTransaction {
                 }
                 addSelectStatements(1);
             } catch (Exception oe) {
+                logger.log(Level.FINE, "Exception thrown in GetPassengerDetails()", oe);
                 throw new SwingBenchException(oe);
             }
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
@@ -142,31 +154,31 @@ public class UpdatePassengerDetails extends DatabaseTransaction {
         }
     }
 
-    private JsonArrayBuilder cloneArray(JsonObject j, String arrayKey) {
-        JsonArrayBuilder ab = Json.createArrayBuilder();
-        for (Map.Entry<String, JsonValue> entry : j.entrySet()) {
-            if (entry.getKey()
-                    .equals(arrayKey)) {
-                if (entry.getValue() instanceof JsonArray) {
-                    JsonArray a = (JsonArray) entry.getValue();
-                    for (JsonValue jv : a) {
-                        ab.add(jv);
-                    }
-                }
-            }
-        }
-        return ab;
-    }
-
-    private JsonObjectBuilder cloneJson(JsonObject j, String excludeString) {
-        JsonObjectBuilder newj = Json.createObjectBuilder();
-        for (Map.Entry<String, JsonValue> entry : j.entrySet()) {
-            if (!entry.getKey()
-                    .equals(excludeString))
-                newj.add(entry.getKey(), entry.getValue());
-        }
-        return newj;
-    }
+//    private JsonArrayBuilder cloneArray(JsonObject j, String arrayKey) {
+//        JsonArrayBuilder ab = Json.createArrayBuilder();
+//        for (Map.Entry<String, JsonValue> entry : j.entrySet()) {
+//            if (entry.getKey()
+//                    .equals(arrayKey)) {
+//                if (entry.getValue() instanceof JsonArray) {
+//                    JsonArray a = (JsonArray) entry.getValue();
+//                    for (JsonValue jv : a) {
+//                        ab.add(jv);
+//                    }
+//                }
+//            }
+//        }
+//        return ab;
+//    }
+//
+//    private JsonObjectBuilder cloneJson(JsonObject j, String excludeString) {
+//        JsonObjectBuilder newj = Json.createObjectBuilder();
+//        for (Map.Entry<String, JsonValue> entry : j.entrySet()) {
+//            if (!entry.getKey()
+//                    .equals(excludeString))
+//                newj.add(entry.getKey(), entry.getValue());
+//        }
+//        return newj;
+//    }
 
     @Override
     public void close() {

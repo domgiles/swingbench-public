@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -44,6 +46,8 @@ public class InsertNewPassenger extends DatabaseTransaction {
     private static List<String> NonUSAirports = null;
     private static final Lock lock = new ReentrantLock();
     private OracleRDBMSClient client = null;
+    private SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+
 
     public InsertNewPassenger() {
         super();
@@ -54,6 +58,7 @@ public class InsertNewPassenger extends DatabaseTransaction {
         Properties prop = new Properties();
         prop.put("oracle.soda.sharedMetadataCache", "true");
         client = new OracleRDBMSClient(prop);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("GMT"));
 
         String value = (String) params.get("SOE_FIRST_NAMES_LOC");
         File firstNamesFile = new File((value == null) ? FIRST_NAMES_FILE : value);
@@ -93,8 +98,7 @@ public class InsertNewPassenger extends DatabaseTransaction {
             String nationality = countries.get(RandomGenerator.randomInteger(0, countries.size()));
             String USAirport = USAirports.get(RandomGenerator.randomInteger(0, USAirports.size()));
             String nonUSAirport = NonUSAirports.get(RandomGenerator.randomInteger(0, NonUSAirports.size()));
-            Long flightDate = RandomGenerator.randomLong(959337930, 1432583142);
-            Long returnFlightDate = flightDate + (604800);
+            String sex = (RandomGenerator.randomInteger(0, 2) == 1) ? "Male" : "Female";
 
             initJdbcTask();
 
@@ -108,23 +112,35 @@ public class InsertNewPassenger extends DatabaseTransaction {
                         .add("FirstName", lastName)
                         .add("LastName", firstName)
                         .add("Nationality", nationality)
-                        .add("DOB", RandomGenerator.randomLong(-1262304000, 1432583142))
+                        .add("DOB", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
+                        .add("PlaceOfBirth", nationality)
+                        .add("Sex", sex)
+                        .add("DateOfPassportIssue", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
+                        .add("DateOfPassportExpiry", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
                         .add("PassportNo", RandomGenerator.randomInteger(100000000, 999999999))
-                        .add("Flagged", "N")
-                        .add("BioData", RandomGenerator.randomAlpha(BIO_SIZE, BIO_SIZE))
-                        .add("FlightHistory", jsonfactory.createArrayBuilder()
+                        .add("PassportType", "P")
+                        .add("WatchList", "N")
+                        .add("Flagged", "N").add("BioData", RandomGenerator.randomAlpha(BIO_SIZE, BIO_SIZE))
+                        .add("FlightHistory", jsonfactory.createArrayBuilder().add(jsonfactory.createObjectBuilder()
+                                        .add("FlightDate", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
+                                        .add("Airport", USAirport))
                                 .add(jsonfactory.createObjectBuilder()
-                                        .add("FlightDate", flightDate).add("Airport", USAirport))
+                                        .add("FlightDate", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
+                                        .add("Airport", nonUSAirport))
                                 .add(jsonfactory.createObjectBuilder()
-                                        .add("FlightDate", returnFlightDate).add("Airport", nonUSAirport)))
-                        .build();
+                                        .add("FlightDate", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
+                                        .add("Airport", nonUSAirport))
+                                .add(jsonfactory.createObjectBuilder()
+                                        .add("FlightDate", sdf.format(java.util.Date.from(Instant.ofEpochSecond(RandomGenerator.randomLong(1, System.currentTimeMillis() / 1000)))))
+                                        .add("Airport", nonUSAirport))).build();
 
-                OracleDocument document = database.createDocumentFromString(passengerJSON.toString());
+                OracleDocument document = database.createDocumentFrom(passengerJSON);
                 collection.insert(document);
                 addInsertStatements(1);
                 connection.commit();
                 addCommitStatements(1);
             } catch (OracleException | SQLException oe) {
+                logger.log(Level.FINE,"Exception thrown in  InsertNewPassenger",oe);
                 throw new SwingBenchException(oe.getMessage());
             }
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));

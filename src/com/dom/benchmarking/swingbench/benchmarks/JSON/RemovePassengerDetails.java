@@ -45,9 +45,10 @@ public class RemovePassengerDetails extends DatabaseTransaction {
         if (passengerRange == null) {
             logger.fine("Reference data loaded for GetPassengerDetails transaction");
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT MAX(us.last_number)\n" +
-                            "FROM user_sequences us\n" +
-                            "WHERE us.sequence_name = 'PASSENGER_SEQ'")) {
+                    "SELECT METADATA_VALUE\n" +
+                            "FROM PASSENGER_METADATA\n" +
+                            "WHERE METADATA_KEY = 'MAX_PASSENGER_COUNT'"
+            )) {
                 ResultSet rs = ps.executeQuery();
                 rs.next();
                 passengerRange = rs.getLong(1);
@@ -81,6 +82,7 @@ public class RemovePassengerDetails extends DatabaseTransaction {
                 connection.commit();
                 addCommitStatements(1);
             } catch (Exception oe) {
+                logger.log(Level.FINE,"Exception occured in RemovePassengerDetails : ", oe);
                 throw new SwingBenchException(oe);
             }
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));

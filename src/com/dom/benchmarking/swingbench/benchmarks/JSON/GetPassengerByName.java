@@ -5,16 +5,21 @@ import com.dom.benchmarking.swingbench.kernel.DatabaseTransaction;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import com.dom.util.OracleUtilities;
+import com.dom.util.Utilities;
 import oracle.soda.OracleCollection;
+import oracle.soda.OracleCursor;
 import oracle.soda.OracleDatabase;
 import oracle.soda.OracleDocument;
 import oracle.soda.rdbms.OracleRDBMSClient;
 import oracle.sql.json.OracleJsonObject;
-import org.json.JSONObject;
 
-import javax.json.JsonObject;
-import java.sql.*;
+import java.io.File;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.locks.Lock;
@@ -22,39 +27,42 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class GetPassengerDetails extends DatabaseTransaction {
-
+public class GetPassengerByName extends DatabaseTransaction {
     private static final Logger logger = Logger.getLogger(GetPassengerDetails.class.getName());
+    private static final String FIRST_NAMES_FILE = "data/lowerfirstnames.txt";
+    private static final String LAST_NAMES_FILE = "data/lowerlastnames.txt";
+    private static List<String> firstNames = null;
+    private static List<String> lastNames = null;
     private static final Lock lock = new ReentrantLock();
     private static Long passengerRange = null;
     private OracleRDBMSClient client = null;
 
-    public GetPassengerDetails() {
+    public GetPassengerByName() {
         super();
     }
 
     @Override
     public void init(Map<String, Object> params) throws SwingBenchException {
-        Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         Properties prop = new Properties();
         prop.put("oracle.soda.sharedMetadataCache", "true");
         client = new OracleRDBMSClient(prop);
 
+        String value = (String) params.get("SOE_FIRST_NAMES_LOC");
+        File firstNamesFile = new File((value == null) ? FIRST_NAMES_FILE : value);
+        value = (String) params.get("SOE_LAST_NAMES_LOC");
+        File lastNamesFile = new File((value == null) ? LAST_NAMES_FILE : value);
+
         lock.lock();
-        if (passengerRange == null) {
-            logger.fine("Reference data loaded for GetPassengerDetails transaction");
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT METADATA_VALUE\n" +
-                            "FROM PASSENGER_METADATA\n" +
-                            "WHERE METADATA_KEY = 'MAX_PASSENGER_COUNT'"
-            )) {
-                ResultSet rs = ps.executeQuery();
-                rs.next();
-                passengerRange = rs.getLong(1);
-            } catch (SQLException se) {
-                logger.log(Level.SEVERE, "Error initialising GetPassengerDetails", se);
-                throw new SwingBenchException(se);
+        try {
+            if (firstNames == null) {
+                firstNames = Utilities.cacheFile(firstNamesFile);
+                lastNames = Utilities.cacheFile(lastNamesFile);
+                logger.fine("Reference data loaded for GetPassengerByName transaction");
             }
+
+        } catch (IOException ie) {
+            logger.log(Level.SEVERE, "Unable to open data seed files : ", ie);
+            throw new SwingBenchException(ie);
         }
         lock.unlock();
     }
@@ -65,23 +73,26 @@ public class GetPassengerDetails extends DatabaseTransaction {
         long executeStart = 0;
         try {
             Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
-            Long passengerKey = RandomGenerator.randomLong(1, passengerRange);
-
             initJdbcTask();
+
+            String randomFirstName = firstNames.get(RandomGenerator.randomInteger(0, firstNames.size()));
+            String randomLastName = firstNames.get(RandomGenerator.randomInteger(0, lastNames.size()));
 
             executeStart = System.nanoTime();
             try {
                 OracleDatabase database = client.getDatabase(connection);
+//                OracleDocument filterSpec = database.createDocumentFromString(String.format("{ \"FirstName\" : \"%s\"}", randomFirstName));
+                OracleDocument filterSpec = database.createDocumentFromString(String.format("{ \"FirstName\" : \"%s\", \"LastName\" : \"%s\"}", randomFirstName, randomLastName));
                 OracleCollection collection = database.openCollection("PASSENGERCOLLECTION");
-                OracleDocument doc = collection.find()
-                        .key(passengerKey.toString())
-                        .getOne();
-                if (doc != null) {
-                    OracleJsonObject json = doc.getContentAs(OracleJsonObject.class);
+                OracleCursor c = collection.find().filter(filterSpec).getCursor();
+                if (c.hasNext()) {
+                    OracleDocument resultDoc = c.next();
+                    OracleJsonObject json = resultDoc.getContentAs(OracleJsonObject.class);
                 }
+                c.close();
                 addSelectStatements(1);
-            } catch (Exception oe) {
-                logger.log(Level.FINE,"Exception thrown in GetPassengerDetails()",oe);
+            } catch (oracle.soda.OracleException | IOException oe) {
+                logger.log(Level.FINE, "Exception thrown in GetPassengerDetails()", oe);
                 throw new SwingBenchException(oe);
             }
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
