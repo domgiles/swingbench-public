@@ -16,7 +16,7 @@ For problems please raise an issues on this web site (In menu at the top of this
 
 ### Installation...
 
-To install Swingbench all you need to do is **ensure you have Java 8 (or later) jdk or runtime in your executable path**, and then unzip the swingbench zip file. Then change into the bin/winbin directory and run the files from there.
+To install Swingbench all you need to do is **ensure you have Java 17 (or later) jdk or runtime in your executable path**, and then unzip the swingbench zip file. Then change into the bin/winbin directory and run the files from there.
 ```shell script
 unzip swingbench
 ```
@@ -101,7 +101,7 @@ Whilst XML is simple to parse by a computer it is not necessarily ideal for huma
 ./results2pdf -c results0001.xml -o resultsrun1.pdf
 ```
 This will convert some of the data held in the XML file into graphs and nicely formatted tables.
-**NOTE : At this time you'll need to use a JDK 8 to run this utilites. Also beware that it only runs on Windows and OSX.**
+**NOTE : At this time you'll need to use a JDK 17 to run this utilites. It should run on Linux, Windows and MacOS
 
 It's also possible that you might want to compare a number of files and then render the results either as human readable tables or CSV files. For this reason I've included a python script in the utils directory. The choice of python was simply to simplify the modification of the script by a user to control what is is rendered. The script that is shipped will pull out the the key metrics as well as the displaying the average,10th,50th and 90th percentile... If multiple result files are supplied the script will display them next to one another. If you use the ```-c``` or ```--csv``` option it will output in comma seperated format making it easier to load into excel or Google Sheets. 
 ```shell script
