@@ -23,10 +23,12 @@ unzip swingbench
 On Microsoft Windows use WinZip to perform this operation.
 
 ### Setting Up
-Before you can run a test/benchmark you need to create a schema and install a set of sample data. This is done via the wizards that are installed in the bin directory. They can be run in command line or graphical modes. There are four wizards to choose from.
+Before you can run a test/benchmark you need to create a schema and install a set of sample data. This is done via the wizards that are installed in the bin directory. They can be run in command line or graphical modes. There are seven wizards to choose from.
 * oewizard : Installs a simple order entry schema that is used to create a heavy write workload
 * shwizard : Installs a simple star schema that is used to create a analytics workload
-* jsonwizard : Installs a simple JSON schema that is used to create a JSON CRUD workload
+* jsonwizard : Installs a simple JSON set of collections that are used to create a JSON CRUD workload
+* jsonsocialwizard : Installs a slightly more sophisticated JSON schema that is used to create a JSON CRUD workload. This benchmark includes support for JSON Duality Views.
+* moviewizard : Installs a series of tables that models an on-line movie store. It features a mix of rich data types with a mixed workload
 * tpcdswizard : Installs a TPC-DS like schema that is used to create a complex analytics workload
 * tpchwizard : Installs a TPC-H like schema that is used to create a medium complexity analytics workload
 
