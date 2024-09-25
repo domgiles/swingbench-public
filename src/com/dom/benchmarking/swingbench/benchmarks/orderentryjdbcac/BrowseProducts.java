@@ -1,22 +1,20 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbcac;
 
 
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import oracle.jdbc.OracleConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLRecoverableException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public class BrowseProducts extends OrderEntryProcess {
-    private static final Logger logger = Logger.getLogger(BrowseProducts.class.getName());
+    private static final Logger logger = Logger.getLogger(com.dom.benchmarking.swingbench.benchmarks.orderentryplsql.BrowseProducts.class.getName());
 
     public void init(Map params) {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);

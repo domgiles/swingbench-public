@@ -1,4 +1,4 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbcac;
 
 
 import com.dom.benchmarking.swingbench.constants.Constants;
@@ -35,16 +35,15 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
     static final int AWAITING_PROCESSING = 4;
     static final int ORDER_PROCESSED = 10;
     static long MIN_CUSTID = 0;
-    static volatile long MAX_CUSTID = 0;
+    static long MAX_CUSTID = 0;
     private static final Logger logger = Logger.getLogger(OrderEntryProcess.class.getName());
     private static final Object lock = new Object();
 
 
     public void logon(Connection connection, long custid) throws SQLException {
-        Date currentTime = new Date(System.currentTimeMillis());
-        try (PreparedStatement insLogon = connection.prepareStatement("insert into logon (logon_id, customer_id, logon_date) values(logon_seq.nextval,?,?)")) {
+        // This is run this way because we want to commit a logon but have a seperate context from the main transaction for AC.
+        try (CallableStatement insLogon = connection.prepareCall("{call orderentry.autonomousLogon(?)}")) {
             insLogon.setLong(1, custid);
-            insLogon.setDate(2, currentTime);
             insLogon.executeUpdate();
         }
         connection.commit();
@@ -123,18 +122,6 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
         }
     }
 
-//    public void insertAdditionalWarehouses(Connection connection, int numWarehouses) throws SQLException {
-//        try (PreparedStatement iaw = connection.prepareStatement("insert into warehouses(warehouse_id, warehouse_name, location_id) values (?,?,?)")) {
-//            for (int i = 0; i < numWarehouses; i++) {
-//                int whid = (MAX_WAREHOUSE_ID + i) + 1;
-//                iaw.setInt(1, whid);
-//                iaw.setString(2, "Warehouse Number " + whid);
-//                iaw.setInt(3, RandomUtilities.randomInteger(1, 9999));
-//                iaw.executeUpdate();
-//            }
-//            connection.commit();
-//        }
-//    }
 
     public List<Long> getCustomerDetailsByName(Connection connection, String firstname, String lastName) throws
             SQLException {
@@ -318,7 +305,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                                 "      where products.category_id = ?           \n" +
                                 "      and inventories.product_id = products.product_id           \n" +
                                 "      and inventories.warehouse_id = ?           \n" +
-                                "      and rownum < 4")) {
+                                "      order by products.product_id")) {
+//                                "      and rownum < 4")) {
             catPs.setInt(1, catID);
             catPs.setInt(2, warehouseId);
 

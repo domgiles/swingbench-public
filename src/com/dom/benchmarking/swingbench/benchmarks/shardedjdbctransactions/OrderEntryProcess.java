@@ -1,15 +1,12 @@
 package com.dom.benchmarking.swingbench.benchmarks.shardedjdbctransactions;
 
 
-import com.dom.benchmarking.swingbench.constants.Constants;
 import com.dom.benchmarking.swingbench.kernel.DatabaseTransaction;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.util.OracleUtilities;
-import com.dom.util.RandomUtilities;
-import oracle.jdbc.OracleShardingKey;
 import oracle.ucp.jdbc.PoolDataSource;
-import org.apache.commons.math3.util.ResizableDoubleArray;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -72,11 +69,17 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                     String username = (String) params.get("CATALOGUE_USERNAME");
                     String password = (String) params.get("CATALOGUE_PASSWORD");
                     try (Connection connection = OracleUtilities.getConnection(username, password, url);
-                         PreparedStatement ps = connection.prepareStatement("select customer_Id from customers where rownum <= " + sampleSize);) {
+//                         PreparedStatement ps = connection.prepareStatement("select customer_Id from customers sample(20) where rownum <= " + sampleSize)) {
+                         PreparedStatement ps = connection.prepareStatement("select o.customer_id,c.rw_dbnum from (SELECT   i.customer_id\n" +
+                                 "                                 ,ORA_HASH(i.customer_id) AS customer_id_hash from customers i order by dbms_random.value() fetch first "+ sampleSize +" rows only) o,gsmadmin_internal.chunks c\n" +
+                                 "WHERE o.customer_id_hash BETWEEN c.low_key AND c.high_key")) {
                         try (ResultSet rs = ps.executeQuery()) {
                             while (rs.next()) {
                                 String ci = rs.getString(1);
                                 sampledCustomerIds.add(ci);
+                                String shardNo = String.valueOf(rs.getInt(2));
+                                logger.fine("Sample customer Id added is: "+ci+ " Shard No:"+ String.valueOf(rs.getInt(2)));
+                                //CustomerIdsmap.put(ci,shardNo);
                             }
                         }
                     }
@@ -196,8 +199,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
         }
     }
 
-    public List<Long> getOrdersByCustomer(Connection connection, String custId) throws SQLException {
-        List<Long> orders = new ArrayList<Long>();
+    public List<BigDecimal> getOrdersByCustomer(Connection connection, String custId) throws SQLException {
+        List<BigDecimal> orders = new ArrayList<>();
 
         try (
                 PreparedStatement orderPs3 = connection.prepareStatement("SELECT o.ORDER_ID,     \n" +
@@ -223,7 +226,7 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
             orderPs3.setString(1, custId);
             try (ResultSet rs = orderPs3.executeQuery()) {
                 while (rs.next()) { // Will only ever be a maximum of 5
-                    orders.add(rs.getLong(1));
+                    orders.add(rs.getBigDecimal(1));
                 }
             }
         }

@@ -8,6 +8,7 @@ import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 import oracle.jdbc.OracleShardingKey;
 import oracle.ucp.jdbc.PoolDataSource;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,10 +69,10 @@ public class NewOrderProcess extends OrderEntryProcess {
                         thinkSleep();
                     }
                     if (productOrders.size() > 0) {
-                        long orderID;
+                        BigDecimal orderID;
                         try (ResultSet rs = seqPs.executeQuery()) {
                             rs.next();
-                            orderID = rs.getLong(1);
+                            orderID = rs.getBigDecimal(1);
                         } catch (Exception se) {
                             logger.log(Level.SEVERE, "Getting Sequence : orders_seq.nextval", se);
                             throw new SwingBenchException(se);
@@ -81,7 +82,7 @@ public class NewOrderProcess extends OrderEntryProcess {
                         int wareHouseId = RandomGenerator.randomInteger(MIN_WAREHOUSE_ID, MAX_WAREHOUSE_ID);
                         Date orderDate = new Date(System.currentTimeMillis());
                         // TODO: Add insert columns to provide equililence to PL/SQL version
-                        insOPs.setLong(1, orderID);
+                        insOPs.setBigDecimal(1, orderID);
                         insOPs.setDate(2, orderDate);
                         insOPs.setString(3, customerUUID);
                         insOPs.setInt(4, wareHouseId);
@@ -102,7 +103,7 @@ public class NewOrderProcess extends OrderEntryProcess {
                                 double price = productOrders.get(lineItemID).getProductID();
                                 quantity = productOrders.get(lineItemID).getQuantityAvailable(); // check to see if its in stock
                                 if (quantity > 0) {
-                                    insIPs.setLong(1, orderID);
+                                    insIPs.setBigDecimal(1, orderID);
                                     insIPs.setInt(2, lineItemID);
                                     insIPs.setInt(3, prodID);
                                     insIPs.setString(4, customerUUID);
@@ -117,7 +118,7 @@ public class NewOrderProcess extends OrderEntryProcess {
                                 ProductDetails inventoryUpdate = new ProductDetails(prodID, wareHouseId, 1);
                                 itemsOrdered.add(inventoryUpdate);
                                 totalOrderCost = totalOrderCost + price;
-                            } catch (java.lang.IndexOutOfBoundsException ignore) {
+                            } catch (IndexOutOfBoundsException ignore) {
                                 // TODO : Discover data issue
                             }
                         }
@@ -125,7 +126,7 @@ public class NewOrderProcess extends OrderEntryProcess {
                         updOPs.setString(1, "online");
                         updOPs.setInt(2, RandomGenerator.randomInteger(0, AWAITING_PROCESSING));
                         updOPs.setDouble(3, totalOrderCost);
-                        updOPs.setLong(4, orderID);
+                        updOPs.setBigDecimal(4, orderID);
                         updOPs.setString(5, customerUUID);
                         
                         updOPs.execute();

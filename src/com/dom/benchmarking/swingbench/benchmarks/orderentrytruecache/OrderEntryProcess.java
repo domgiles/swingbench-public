@@ -1,4 +1,4 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache;
 
 
 import com.dom.benchmarking.swingbench.constants.Constants;
@@ -21,21 +21,21 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
     static final int MIN_CREDITLIMIT = 100;
     static final int MIN_SALESID = 145;
     static final int MAX_SALESID = 171;
-    static final int MIN_PRODS_TO_BUY = 2;
-    static final int MAX_PRODS_TO_BUY = 6;
+    static final int MIN_PRODS_TO_BUY = 1;
+    static final int MAX_PRODS_TO_BUY = 1;
     static final int MIN_PROD_ID = 1;
     static final int HOUSE_NO_RANGE = 200;
-    static final int MAX_PROD_ID = 1000;
+    static final int MAX_PROD_ID = 16;
     static final int MIN_COST_DELIVERY = 1;
     static final int MAX_COST_DELIVERY = 5;
     static int MIN_WAREHOUSE_ID = 1;
-    static int MAX_WAREHOUSE_ID = 1000;
+    static int MAX_WAREHOUSE_ID = 1;
     static long MIN_ORDERID = 1;
     static long MAX_ORDERID = 146610;
     static final int AWAITING_PROCESSING = 4;
     static final int ORDER_PROCESSED = 10;
     static long MIN_CUSTID = 0;
-    static volatile long MAX_CUSTID = 0;
+    static long MAX_CUSTID = 0;
     private static final Logger logger = Logger.getLogger(OrderEntryProcess.class.getName());
     private static final Object lock = new Object();
 
@@ -47,7 +47,7 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
             insLogon.setDate(2, currentTime);
             insLogon.executeUpdate();
         }
-        connection.commit();
+//        connection.commit();
     }
 
     public void getMaxandMinCustID(Connection connection, Map<String, Object> params) throws SQLException {
@@ -69,19 +69,14 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                                     logger.fine("Acquiring customer counts from metadata table");
                                     try (ResultSet vrs = vps.executeQuery()) {
                                         while (vrs.next()) {
-                                            switch (vrs.getString(1)) {
-                                                case "SOE_MIN_ORDER_ID":
-                                                    MIN_ORDERID = Long.parseLong(vrs.getString(2));
-                                                    break;
-                                                case "SOE_MAX_ORDER_ID":
-                                                    MAX_ORDERID = Long.parseLong(vrs.getString(2));
-                                                    break;
-                                                case "SOE_MIN_CUSTOMER_ID":
-                                                    MIN_CUSTID = Long.parseLong(vrs.getString(2));
-                                                    break;
-                                                case "SOE_MAX_CUSTOMER_ID":
-                                                    MAX_CUSTID = Long.parseLong(vrs.getString(2));
-                                                    break;
+                                            if (vrs.getString(1).equals("SOE_MIN_ORDER_ID")) {
+                                                MIN_ORDERID = Long.parseLong(vrs.getString(2));
+                                            } else if (vrs.getString(1).equals("SOE_MAX_ORDER_ID")) {
+                                                MAX_ORDERID = Long.parseLong(vrs.getString(2));
+                                            } else if (vrs.getString(1).equals("SOE_MIN_CUSTOMER_ID")) {
+                                                MIN_CUSTID = Long.parseLong(vrs.getString(2));
+                                            } else if (vrs.getString(1).equals("SOE_MAX_CUSTOMER_ID")) {
+                                                MAX_CUSTID = Long.parseLong(vrs.getString(2));
                                             }
                                         }
                                     }
@@ -123,18 +118,18 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
         }
     }
 
-//    public void insertAdditionalWarehouses(Connection connection, int numWarehouses) throws SQLException {
-//        try (PreparedStatement iaw = connection.prepareStatement("insert into warehouses(warehouse_id, warehouse_name, location_id) values (?,?,?)")) {
-//            for (int i = 0; i < numWarehouses; i++) {
-//                int whid = (MAX_WAREHOUSE_ID + i) + 1;
-//                iaw.setInt(1, whid);
-//                iaw.setString(2, "Warehouse Number " + whid);
-//                iaw.setInt(3, RandomUtilities.randomInteger(1, 9999));
-//                iaw.executeUpdate();
-//            }
-//            connection.commit();
-//        }
-//    }
+    public void insertAdditionalWarehouses(Connection connection, int numWarehouses) throws SQLException {
+        try (PreparedStatement iaw = connection.prepareStatement("insert into warehouses(warehouse_id, warehouse_name, location_id) values (?,?,?)")) {
+            for (int i = 0; i < numWarehouses; i++) {
+                int whid = (MAX_WAREHOUSE_ID + i) + 1;
+                iaw.setInt(1, whid);
+                iaw.setString(2, "Warehouse Number " + whid);
+                iaw.setInt(3, RandomUtilities.randomInteger(1, 9999));
+                iaw.executeUpdate();
+            }
+            connection.commit();
+        }
+    }
 
     public List<Long> getCustomerDetailsByName(Connection connection, String firstname, String lastName) throws
             SQLException {
@@ -318,7 +313,7 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                                 "      where products.category_id = ?           \n" +
                                 "      and inventories.product_id = products.product_id           \n" +
                                 "      and inventories.warehouse_id = ?           \n" +
-                                "      and rownum < 4")) {
+                                "      and rownum < 5")) {
             catPs.setInt(1, catID);
             catPs.setInt(2, warehouseId);
 
@@ -331,48 +326,48 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
         }
     }
 
-//    public int getProductQuantityByID(Connection connection, int ID) throws SQLException {
-//        int quantity = 0;
-//        try (PreparedStatement prodqPs =
-//                     connection.prepareStatement(" select  p.product_id, product_name, product_description, category_id, weight_class, supplier_id,  product_status,  list_price, min_price, catalog_url, quantity_on_hand, warehouse_id from  product_information p, inventories i where   i.product_id = ?  and   i.product_id = p.product_id")) {
-//            prodqPs.setInt(1, ID);
-//            try (ResultSet rs = prodqPs.executeQuery()) {
-//                if (rs.next()) {
-//                    quantity = rs.getInt(11);
-//                }
-//            }
-//        }
-//        return quantity;
-//    }
+    public int getProductQuantityByID(Connection connection, int ID) throws SQLException {
+        int quantity = 0;
+        try (PreparedStatement prodqPs =
+                     connection.prepareStatement(" select  p.product_id, product_name, product_description, category_id, weight_class, supplier_id,  product_status,  list_price, min_price, catalog_url, quantity_on_hand, warehouse_id from  product_information p, inventories i where   i.product_id = ?  and   i.product_id = p.product_id")) {
+            prodqPs.setInt(1, ID);
+            try (ResultSet rs = prodqPs.executeQuery()) {
+                if (rs.next()) {
+                    quantity = rs.getInt(11);
+                }
+            }
+        }
+        return quantity;
+    }
 
-//    public void getProductQuantityByCategory(Connection connection, int catID) throws SQLException {
-//        try (PreparedStatement catqPs =
-//                     connection.prepareStatement("select p.product_id, product_name, product_description, category_id, weight_class, supplier_id, product_status, list_price, min_price, catalog_url,  quantity_on_hand, warehouse_id from   product_information p,  inventories i where  category_id = ? and i.product_id = p.product_id")) {
-//            catqPs.setInt(1, catID);
-//            try (ResultSet rs = catqPs.executeQuery()) {
-//                rs.next();
-//            }
-//        }
-//    }
+    public void getProductQuantityByCategory(Connection connection, int catID) throws SQLException {
+        try (PreparedStatement catqPs =
+                     connection.prepareStatement("select p.product_id, product_name, product_description, category_id, weight_class, supplier_id, product_status, list_price, min_price, catalog_url,  quantity_on_hand, warehouse_id from   product_information p,  inventories i where  category_id = ? and i.product_id = p.product_id")) {
+            catqPs.setInt(1, catID);
+            try (ResultSet rs = catqPs.executeQuery()) {
+                rs.next();
+            }
+        }
+    }
 
-//    public void getOrderByID(Connection connection, int orderID) throws SQLException {
-//        try (PreparedStatement orderPs =
-//                     connection.prepareStatement(" select  order_id,   order_date,   order_mode,   customer_id,   order_status,   order_total,   sales_rep_id,   promotion_id from    orders where    order_id = ?")) {
-//            orderPs.setInt(1, orderID);
-//            try (ResultSet rs = orderPs.executeQuery()) {
-//                rs.next();
-//            }
-//        }
-//    }
+    public void getOrderByID(Connection connection, int orderID) throws SQLException {
+        try (PreparedStatement orderPs =
+                     connection.prepareStatement(" select  order_id,   order_date,   order_mode,   customer_id,   order_status,   order_total,   sales_rep_id,   promotion_id from    orders where    order_id = ?")) {
+            orderPs.setInt(1, orderID);
+            try (ResultSet rs = orderPs.executeQuery()) {
+                rs.next();
+            }
+        }
+    }
 
-//    public void getOrderDetailsByOrderID(Connection connection, long orderID) throws SQLException {
-//        try (PreparedStatement orderPs2 =
-//                     connection.prepareStatement(" SELECT  o.order_id,   line_item_id,   product_id,   unit_price,   quantity,   order_mode,   order_status,   order_total,   sales_rep_id,   promotion_id,   c.customer_id,   cust_first_name,   cust_last_name,   credit_limit,   cust_email  FROM    orders o ,   order_items oi,   customers c WHERE    o.order_id = oi.order_id  and   o.customer_id = c.customer_id  and   o.order_id = ?")) {
-//            orderPs2.setLong(1, orderID);
-//            try (ResultSet rs = orderPs2.executeQuery()) {
-//                rs.next();
-//            }
-//        }
-//    }
+    public void getOrderDetailsByOrderID(Connection connection, long orderID) throws SQLException {
+        try (PreparedStatement orderPs2 =
+                     connection.prepareStatement(" SELECT  o.order_id,   line_item_id,   product_id,   unit_price,   quantity,   order_mode,   order_status,   order_total,   sales_rep_id,   promotion_id,   c.customer_id,   cust_first_name,   cust_last_name,   credit_limit,   cust_email  FROM    orders o ,   order_items oi,   customers c WHERE    o.order_id = oi.order_id  and   o.customer_id = c.customer_id  and   o.order_id = ?")) {
+            orderPs2.setLong(1, orderID);
+            try (ResultSet rs = orderPs2.executeQuery()) {
+                rs.next();
+            }
+        }
+    }
 
 }

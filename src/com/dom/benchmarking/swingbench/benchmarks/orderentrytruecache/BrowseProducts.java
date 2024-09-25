@@ -1,22 +1,21 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache;
 
 
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import oracle.jdbc.OracleConnection;
+import oracle.sql.TRANSDUMP;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLRecoverableException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public class BrowseProducts extends OrderEntryProcess {
-    private static final Logger logger = Logger.getLogger(BrowseProducts.class.getName());
+    private static final Logger logger = Logger.getLogger(com.dom.benchmarking.swingbench.benchmarks.orderentryplsql.BrowseProducts.class.getName());
 
     public void init(Map params) {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
@@ -30,19 +29,18 @@ public class BrowseProducts extends OrderEntryProcess {
     }
 
     public void execute(Map params) throws SwingBenchException {
-
+        boolean USE_TRUECACHE_CON = Boolean.parseBoolean((String) params.get("USE_TRUECACHE_CON"));
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
         long executeStart = System.nanoTime();
 
         try {
 
-//            ((OracleConnection)connection).setDefaultRowPrefetch(20);
-//            The following shouldn't log on. We may have to feature one that does. But this transaction should be read only.
-//            custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
-//            logon(connection, custID);
-//            addInsertStatements(1);
-//            addCommitStatements(1);
+            if (USE_TRUECACHE_CON) {
+                connection.setReadOnly(true);
+//                logger.log(Level.FINE,"Using ReadOnly Connection");
+            }
+
             long custID = 0;
             getCustomerDetails(connection, custID);
             addSelectStatements(1);
@@ -57,8 +55,8 @@ public class BrowseProducts extends OrderEntryProcess {
             }
 
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
-
-//            throw new SQLException("This is  a test message", "Test", 4063);
+            if(connection.isReadOnly())
+                connection.setReadOnly(false);
 
         } catch (SQLException se) {
             logger.log(Level.FINE, String.format("Exception : ", se.getMessage()));

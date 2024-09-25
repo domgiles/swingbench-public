@@ -10,6 +10,7 @@ import oracle.jdbc.OracleShardingKey;
 import oracle.ucp.jdbc.PoolDataSource;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -94,8 +95,8 @@ public class NewCustomerProcess extends OrderEntryProcess {
     }
 
     public void execute(Map<String, Object> params) throws SwingBenchException {
-        long addressID;
-        long cardID;
+        BigDecimal addressID;
+        BigDecimal cardID;
         // Create some random data
         String firstName = firstNames.get(RandomGenerator.randomInteger(0, firstNames.size()));
         String lastName = lastNames.get(RandomGenerator.randomInteger(0, lastNames.size()));
@@ -138,8 +139,8 @@ public class NewCustomerProcess extends OrderEntryProcess {
 
                     try (ResultSet rs = seqPs.executeQuery();) {
                         rs.next();
-                        addressID = rs.getLong(1);
-                        cardID = rs.getLong(2);
+                        addressID = rs.getBigDecimal(1);
+                        cardID = rs.getBigDecimal(2);
                     }
 
 //                    logger.log(Level.FINE,"Sequences took : " + (System.currentTimeMillis() - seqtime) + " ms");
@@ -167,8 +168,8 @@ public class NewCustomerProcess extends OrderEntryProcess {
                     insPs.setDate(12, dob);
                     insPs.setString(13, "Y");
                     insPs.setString(14, "N");
-                    insPs.setLong(15, addressID);
-                    insPs.setLong(16, cardID);
+                    insPs.setBigDecimal(15, addressID);
+                    insPs.setBigDecimal(16, cardID);
 
                     insPs.execute();
                     addInsertStatements(1);
@@ -177,7 +178,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
 
 //                    long ins2 = System.currentTimeMillis();
                     // Insert address
-                    insPs2.setLong(1, addressID);
+                    insPs2.setBigDecimal(1, addressID);
                     insPs2.setString(2, uuid);
                     insPs2.setInt(3, RandomGenerator.randomInteger(1, HOUSE_NO_RANGE));
                     insPs2.setString(4, "Street Name");
@@ -192,7 +193,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
 
 //                    long ins3 = System.currentTimeMillis();
                     // Insert Credit Card
-                    insPs3.setLong(1, cardID);
+                    insPs3.setBigDecimal(1, cardID);
                     insPs3.setString(2, uuid);
                     insPs3.setString(3, "Visa (Debit)");
                     insPs3.setLong(4, RandomGenerator.randomLong(1111111111l, 9999999999l));

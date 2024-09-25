@@ -1,4 +1,4 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache;
 
 
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
@@ -185,7 +185,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
                 insPs2.setString(7, country);
                 insPs2.setString(8, "Postcode");
                 insPs2.execute();
-//                insPs2.close();
+                insPs2.close();
                 addInsertStatements(1);
 
 
@@ -197,7 +197,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
                 insPs3.setString(6, "Y");
                 insPs3.setInt(7, RandomGenerator.randomInteger(1111, 9999));
                 insPs3.execute();
-//                insPs3.close();
+                insPs3.close();
                 addInsertStatements(1);
             }
             connection.commit();

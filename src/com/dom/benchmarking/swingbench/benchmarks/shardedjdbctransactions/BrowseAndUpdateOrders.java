@@ -8,6 +8,7 @@ import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 import oracle.jdbc.OracleShardingKey;
 import oracle.ucp.jdbc.PoolDataSource;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 import java.util.Map;
@@ -70,11 +71,11 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
                     addCommitStatements(1);
                     getCustomerDetails(connection, customerUUID);
                     getAddressDetails(connection, customerUUID);
-                    List<Long> orders = getOrdersByCustomer(connection, customerUUID);
+                    List<BigDecimal> orders = getOrdersByCustomer(connection, customerUUID);
                     addSelectStatements(3);
                     if (orders.size() > 0) {
-                        Long selectedOrder = orders.get(RandomGenerator.randomInteger(0, orders.size()));
-                        liPs.setLong(1, selectedOrder);
+                        BigDecimal selectedOrder = orders.get(RandomGenerator.randomInteger(0, orders.size()));
+                        liPs.setLong(1, selectedOrder.longValue());
                         liPs.setString(2, customerUUID);
                         addSelectStatements(1);
                         try (ResultSet rs = liPs.executeQuery()) {
@@ -82,12 +83,12 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
                             if (rs.next()) {
                                 Long lit = rs.getLong(2);
                                 Float up = rs.getFloat(4);
-                                upPs.setLong(1, selectedOrder);
+                                upPs.setLong(1, selectedOrder.longValue());
                                 upPs.setLong(2, lit);
                                 upPs.setString(3, customerUUID);
                                 upPs.executeUpdate();
                                 upPs2.setFloat(1, up);
-                                upPs2.setLong(2, selectedOrder);
+                                upPs2.setLong(2, selectedOrder.longValue());
                                 upPs2.setString(3, customerUUID);
                                 addUpdateStatements(2);
                                 connection.commit();

@@ -17,7 +17,6 @@ import java.sql.Connection;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -37,13 +36,13 @@ public abstract class MovieStream extends DatabaseTransaction {
     protected static List<String> movieList = null;
     protected static List<String> wordList = null;
     protected static List<String> actorList = null;
-    protected static final ArrayList<String> genereList = new ArrayList(List.of("Biography", "Musical", "Animation", "Mystery", "Film-Noir", "Lifestyle", "War", "Romance", "Family", "Western", "Drama", "Documentary", "Horror", "Action", "Sci-Fi", "Thriller", "Adventure", "Fantasy", "Crime", "Comedy"));
+    protected static final ArrayList<String> genreList = new ArrayList(List.of("Biography", "Musical", "Animation", "Mystery", "Film-Noir", "Lifestyle", "War", "Romance", "Family", "Western", "Drama", "Documentary", "Horror", "Action", "Sci-Fi", "Thriller", "Adventure", "Fantasy", "Crime", "Comedy"));
     protected static final String[] deviceTypes = new String[]{"mobile", "mobile", "mobile", "mobile", "tablet", "tablet", "tablet", "smarttv", "smarttv", "smarttv", "smarttv", "smarttv", "mobile", "computer", "computer", "smartdevice"};
     protected static final String[] manufacturers = new String[]{"Apple", "Apple", "Samsung", "Samsung", "Samsung", "LG", "Google", "Google"};
     protected static final String[] os = new String[]{"MacOS", "Windows", "Android", "iOS"};
     protected static final String[] cardProviders = new String[]{"visa", "amex", "visa", "visa", "mastercard", "visa"};
 
-    protected static final int NUMBEROFGENERE = genereList.size();
+    protected static final int NUMBEROFGENRE = genreList.size();
 
     private void queueEvent(Connection connection, JsonObject event) throws JMSException {
 
@@ -176,12 +175,12 @@ public abstract class MovieStream extends DatabaseTransaction {
     }
 
     protected ArrayList<Integer> browseMovies(Connection connection) throws SQLException, JMSException {
-        ArrayList<String> genereListClone = (ArrayList<String>) genereList.clone();
+        ArrayList<String> genereListClone = (ArrayList<String>) genreList.clone();
         ArrayList<String> genreBrowseList = new ArrayList<>();
         ArrayList<Integer> browsedMovies = new ArrayList<>();
 
         for (int i = 0; i < 4; i++) {
-            int _sampleNumber = RandomGenerator.randomInteger(0, NUMBEROFGENERE - i);
+            int _sampleNumber = RandomGenerator.randomInteger(0, NUMBEROFGENRE - i);
             genreBrowseList.add(genereListClone.get(_sampleNumber));
             genereListClone.remove(_sampleNumber);
         }

@@ -1,4 +1,4 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbcac;
 
 
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
@@ -19,6 +19,8 @@ public class NewOrderProcess extends OrderEntryProcess {
     private static final String PRODUCTS_FILE = "data/productids.txt";
     private static final int STATICLINEITEMSIZE = 3;
     private static final Object lock = new Object();
+    private long custID;
+    private long orderID;
 
     public NewOrderProcess() {
     }
@@ -43,14 +45,14 @@ public class NewOrderProcess extends OrderEntryProcess {
 
 
     public void execute(Map<String, Object> params) throws SwingBenchException {
-        List<ProductDetails> productOrders = new ArrayList<ProductDetails>();
+        List<ProductDetails> productOrders = new ArrayList<>();
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
 
         long executeStart = System.nanoTime();
 
         try {
-            long custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
+            custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
             logon(connection, custID);
             addInsertStatements(1);
             addCommitStatements(1);
@@ -68,7 +70,6 @@ public class NewOrderProcess extends OrderEntryProcess {
                 thinkSleep();
             }
             if (!productOrders.isEmpty()) {
-                long orderID;
                 try (PreparedStatement seqPs = connection.prepareStatement("select orders_seq.nextval from dual");
                      ResultSet rs = seqPs.executeQuery()) {
                     rs.next();
@@ -159,7 +160,7 @@ public class NewOrderProcess extends OrderEntryProcess {
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
         } catch (SQLException sbe) {
             logger.log(Level.FINE, String.format("Exception : %s", sbe.getMessage()));
-            logger.log(Level.FINE, "SQLException thrown : ", sbe);
+            logger.log(Level.FINEST, "SQLException thrown : ", sbe);
             try {
                 addRollbackStatements(1);
                 connection.rollback();

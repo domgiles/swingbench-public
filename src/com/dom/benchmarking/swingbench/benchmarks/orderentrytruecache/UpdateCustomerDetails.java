@@ -1,16 +1,16 @@
-package com.dom.benchmarking.swingbench.benchmarks.shardedjdbctransactions;
+package com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache;
 
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 import com.dom.util.Utilities;
-import oracle.jdbc.OracleShardingKey;
-import oracle.ucp.jdbc.PoolDataSource;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -37,10 +37,13 @@ public class UpdateCustomerDetails extends OrderEntryProcess {
 
     @Override
     public void init(Map<String, Object> params) throws SwingBenchException {
+        boolean initCompleted = false;
 
-        if (firstNames == null) { // load any data you might need (in this case only once)
+        if ((firstNames == null) || !initCompleted) { // load any data you might need (in this case only once)
+
             synchronized (lock) {
                 if (firstNames == null) {
+
                     String value = (String) params.get("SOE_FIRST_NAMES_LOC");
                     File firstNamesFile = new File((value == null) ? FIRST_NAMES_FILE : value);
                     value = (String) params.get("SOE_LAST_NAMES_LOC");
@@ -71,22 +74,15 @@ public class UpdateCustomerDetails extends OrderEntryProcess {
                         throw new SwingBenchException(ioe);
                     }
                 }
-            }
-        }
 
-        try {
-            sampleCustomerIds(params);
-        } catch (Exception e) {
-            logger.log(Level.FINE, "Transaction BrowseAndUpdateOrders() failed in init() : ", e);
-            throw new SwingBenchException(e.getMessage(), SwingBenchException.UNRECOVERABLEERROR);
+                initCompleted = true;
+            }
         }
     }
 
     @Override
     public void execute(Map<String, Object> params) throws SwingBenchException {
-
-        PoolDataSource ods = (PoolDataSource) params.get(SwingBenchTask.CONNECTION_POOL);
-        String uuid = sampledCustomerIds.get(RandomGenerator.randomInteger(0, sampledCustomerIds.size()));
+        Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
 
         String firstName = firstNames.get(RandomGenerator.randomInteger(0, firstNames.size()));
@@ -96,57 +92,57 @@ public class UpdateCustomerDetails extends OrderEntryProcess {
         String country = countries.get(RandomGenerator.randomInteger(0, countries.size()));
         long executeStart = System.nanoTime();
 
-        try {
-            OracleShardingKey key = ods.createShardingKeyBuilder().subkey(uuid, JDBCType.VARCHAR).build();
-            try (Connection connection = ods.createConnectionBuilder().shardingKey(key).build();
-                 PreparedStatement addSeqPs = connection.prepareStatement("select address_seq.nextval from dual");
-                 PreparedStatement insAddPs = connection.prepareStatement("INSERT INTO ADDRESSES ( address_id, customer_id, date_created, house_no_or_name, street_name, town, county, country, post_code, zip_code ) VALUES " +
-                         "( ?, ?, TRUNC(SYSDATE,'MI'), ?, 'Street Name', ?, ?, ?, 'Postcode', NULL)");
-                 PreparedStatement updAddPs = connection.prepareStatement(" UPDATE CUSTOMERS SET PREFERRED_ADDRESS = ? WHERE customer_id = ?")
-            ) {
-                try {
-                    List<String> custIDLists = getCustomerDetailsByID(connection, uuid);
-                    addSelectStatements(1);
-                    thinkSleep();
-                    if (custIDLists.size() > 0) {
-                        BigDecimal addId;
-                        try (ResultSet rs = addSeqPs.executeQuery()) {
-                            rs.next();
-                            addId = rs.getBigDecimal(1);
-                        }
-
-                        insAddPs.setBigDecimal(1, addId);
-                        insAddPs.setString(2, custIDLists.get(0));
-                        insAddPs.setInt(3, RandomGenerator.randomInteger(1, HOUSE_NO_RANGE));
-                        insAddPs.setString(4, town);
-                        insAddPs.setString(5, county);
-                        insAddPs.setString(6, country);
-                        insAddPs.execute();
-                        addInsertStatements(1);
-
-                        updAddPs.setBigDecimal(1, addId);
-                        updAddPs.setString(2, custIDLists.get(0));
-                        updAddPs.execute();
-                        addUpdateStatements(1);
-                        connection.commit();
-                        addCommitStatements(1);
-                    }
-
-                } catch (SQLRecoverableException sre) {
-                    logger.log(Level.FINE, "SQLRecoverableException in UpdateCustomerDetails() probably because of end of benchmark : " + sre.getMessage());
-                } catch (SQLException se) {
-                    try {
-                        addRollbackStatements(1);
-                        connection.rollback();
-                    } catch (
-                            SQLException e) { // Nothing I can do. Typically as I hard close a connection at the end of run.
-                    }
-                    throw new SwingBenchException(se);
-                }
-                processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
+        try (
+                PreparedStatement insAddPs = connection.prepareStatement(
+                        "INSERT INTO ADDRESSES    \n" +
+                                "        ( address_id,    \n" +
+                                "          customer_id,    \n" +
+                                "          date_created,    \n" +
+                                "          house_no_or_name,    \n" +
+                                "          street_name,    \n" +
+                                "          town,    \n" +
+                                "          county,    \n" +
+                                "          country,    \n" +
+                                "          post_code,    \n" +
+                                "          zip_code    \n" +
+                                "        )    \n" +
+                                "        VALUES    \n" +
+                                "        ( ?, ?, TRUNC(SYSDATE,'MI'), ?, 'Street Name', ?, ?, ?, 'Postcode', NULL)");
+                PreparedStatement updAddPs = connection.prepareStatement(" UPDATE CUSTOMERS SET PREFERRED_ADDRESS = ? WHERE customer_id = ?");
+                PreparedStatement addSeqPs = connection.prepareStatement("select address_seq.nextval from dual");
+                ResultSet rs = addSeqPs.executeQuery()
+        ) {
+            List<Long> custIDLists = getCustomerDetailsByName(connection, firstName, lastName);
+            addSelectStatements(1);
+            thinkSleep();
+            if (custIDLists.size() > 0) {
+                rs.next();
+                Long addId = rs.getLong(1);
+                insAddPs.setLong(1, addId);
+                insAddPs.setLong(2, custIDLists.get(0));
+                insAddPs.setInt(3, RandomGenerator.randomInteger(1, HOUSE_NO_RANGE));
+                insAddPs.setString(4, town);
+                insAddPs.setString(5, county);
+                insAddPs.setString(6, country);
+                insAddPs.execute();
+                addInsertStatements(1);
+                updAddPs.setLong(1, addId);
+                updAddPs.setLong(2, custIDLists.get(0));
+                updAddPs.execute();
+                addUpdateStatements(1);
             }
-        } catch (SQLException | SwingBenchException sbe) {
-
+            connection.commit();
+            addCommitStatements(1);
+            processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
+        } catch (SQLException sbe) {
+            logger.log(Level.FINE, String.format("Exception : ", sbe.getMessage()));
+            logger.log(Level.FINEST, "SQLException thrown : ", sbe);
+            try {
+                addRollbackStatements(1);
+                connection.rollback();
+            } catch (SQLException er) {
+                logger.log(Level.FINE, "Unable to rollback transaction");
+            }
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), false, getInfoArray()));
             throw new SwingBenchException(sbe);
         }

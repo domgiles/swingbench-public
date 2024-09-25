@@ -1,6 +1,8 @@
-package com.dom.benchmarking.swingbench.benchmarks.orderentryjdbc;
+package com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache;
 
-
+import com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache.OrderEntryProcess;
+import com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache.ProductDetails;
+import com.dom.benchmarking.swingbench.configuration.Configuration;
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
@@ -13,22 +15,20 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public class NewOrderProcess extends OrderEntryProcess {
-    private static final Logger logger = Logger.getLogger(NewOrderProcess.class.getName());
+    private static final Logger logger = Logger.getLogger(com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache.NewOrderProcess.class.getName());
     private static final String PRODUCTS_FILE = "data/productids.txt";
     private static final int STATICLINEITEMSIZE = 3;
     private static final Object lock = new Object();
+    private static boolean initCompleted = false;
 
     public NewOrderProcess() {
     }
 
-    public void init(Map<String, Object> params) throws SwingBenchException {
+    public void init(Map<String, Object> params) {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
-        boolean initCompleted = false;
 
         if (!initCompleted) { // load any data you might need (in this case only once)
-
             synchronized (lock) {
                 try {
                     this.getMaxandMinCustID(connection, params);
@@ -43,9 +43,10 @@ public class NewOrderProcess extends OrderEntryProcess {
 
 
     public void execute(Map<String, Object> params) throws SwingBenchException {
-        List<ProductDetails> productOrders = new ArrayList<ProductDetails>();
+        List<ProductDetails> productOrders = new ArrayList<>();
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
+
 
         long executeStart = System.nanoTime();
 
@@ -100,7 +101,9 @@ public class NewOrderProcess extends OrderEntryProcess {
                 List<ProductDetails> itemsOrdered = new ArrayList<>();
 
                 for (int lineItemID = 0; lineItemID < numOfProductsToBuy; lineItemID++) {
-                    int prodID = productOrders.get(lineItemID).getProductID();
+                    //int prodID = ((Integer)products.get(RandomGenerator.randomInteger(0, products.size()))).intValue();
+                    int prodID = 0;
+                    prodID = productOrders.get(lineItemID).getProductID();
                     int quantity;
                     double price =
                             productOrders.get(lineItemID).getProductID();
@@ -139,12 +142,16 @@ public class NewOrderProcess extends OrderEntryProcess {
 
                 addUpdateStatements(1);
                 thinkSleep();
-                //getOrderDetailsByOrderID(connection, orderID);
-                //addSelectStatements(1);
+                getOrderDetailsByOrderID(connection, orderID);
+                addSelectStatements(1);
                 thinkSleep();
 
-                for (ProductDetails inventoryUpdate : itemsOrdered) {
-                    try (PreparedStatement updIns = connection.prepareStatement("update inventories " + "set quantity_on_hand = quantity_on_hand - ? " + "where product_id = ? " + "and warehouse_id = ?")) {
+                for (int i = 0; i < itemsOrdered.size(); i++) {
+                    ProductDetails inventoryUpdate = itemsOrdered.get(i);
+                    try (PreparedStatement updIns = connection.prepareStatement(
+                            "update inventories\n" +
+                                    "set quantity_on_hand = quantity_on_hand - ?\n" +
+                                    "where product_id = ? and warehouse_id = ?\n")) {
                         updIns.setInt(1, inventoryUpdate.quantityAvailable);
                         updIns.setInt(2, inventoryUpdate.productID);
                         updIns.setInt(3, inventoryUpdate.warehouseID);
@@ -152,14 +159,16 @@ public class NewOrderProcess extends OrderEntryProcess {
                         updIns.close();
                         addUpdateStatements(1);
                     }
+                    thinkSleep();
                 }
+
                 connection.commit();
                 addCommitStatements(1);
             }
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
         } catch (SQLException sbe) {
             logger.log(Level.FINE, String.format("Exception : %s", sbe.getMessage()));
-            logger.log(Level.FINE, "SQLException thrown : ", sbe);
+            logger.log(Level.FINEST, "SQLException thrown : ", sbe);
             try {
                 addRollbackStatements(1);
                 connection.rollback();

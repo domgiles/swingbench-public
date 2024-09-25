@@ -28,6 +28,7 @@ public class NewOrderProcess extends OrderEntryProcess {
             this.parseCommitClientSide(params);
             this.setCommitClientSide(connection, commitClientSide);
             this.setIsStatic(isStatic, connection);
+            this.getMaxandMinCustID(connection, params);
         } catch (SQLException se) {
             logger.log(Level.SEVERE, "Unable to get max and min customer id", se);
         }
