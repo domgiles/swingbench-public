@@ -169,6 +169,74 @@ python parse_results.py -r ../bin/results.xml ../bin/results00001.xml
 | Process Orders                            |           9.00           |           6.00           |
 +-------------------------------------------+--------------------------+--------------------------+
 ```
+### Analyzing the results with SQL
+Starting with the April 2025 release every execution of swingbench/charbench/minibench stores the results in the Oracle Database as a JSON document in a table called ```BENCHMARK_RESULTS```. These results can be trivially queried using SQL and via Oracle's support for dot notation. You will need an Oracle Database 19c or higher version for this functionality to work.
+For example after running the SOE benchmark you can query the ```BENCHMARK_RESULTS``` table with a piece of SQL similar to the following
+```sql
+select *
+from BENCHMARK_RESULTS
+```
+You should see something similar to
+```
+   ID RECORDING_TIME                  RECORDING_NAME                          RESULTS_JSON
+_____ _______________________________ _______________________________________ ______________________
+   61 14-APR-25 17.05.59.237226000    "Order Entry (PLSQL) V2" - Charbench    {"Results":{"xmlns":"http://www.dominicgiles.co....
+   62 14-APR-25 17.07.03.775729000    "Order Entry (PLSQL) V2" - Charbench    {"Results":{"xmlns":"http://www.dominicgiles.co....
+   63 14-APR-25 17.16.22.020068000    "Order Entry (PLSQL) V2" - Charbench    {"Results":{"xmlns":"http://www.dominicgiles.co....
+```
+Whilst this is useful we can use SQL support for JSON dot notation to look at the results in a little more detail..
+```sql
+select id,
+       RECORDING_TIME,
+       br.RESULTS_JSON.Results.Overview.AverageTransactionsPerSecond
+from BENCHMARK_RESULTS br;
+```
+The dot notation syntax enables us to navigate through the hierarchy of the JSON document. In this instance we are using to retrieve the average transactions per second as shown in the snippet of the json document.
+```json
+{
+  "Results": {
+    "xmlns": "http://www.dominicgiles.com/swingbench/results",
+    "Overview": {
+      "Comment": "Simple Order Entry benchmark using client side jdbc calls",
+      "TotalLogonTime": "0:00:00",
+      "TotalRunTime": "1:00:00",
+      "TotalCompletedTransactions": "145018",
+      "TotalFailedTransactions": "0",
+      "BenchmarkName": "Order Entry (jdbc)",
+      "AverageTransactionsPerSecond": "40.28",
+      "TimeOfRun": "8 Apr 2025, 12:21:19",
+      "MaximumTransactionRate": "3674"
+    },
+```
+Using a similar approach we can compare the difference in performance between each run.
+```sql
+select br.id,
+       br.RECORDING_TIME,
+    json_value(br.RESULTS_JSON, '$.Results.Overview.AverageTransactionsPerSecond' RETURNING NUMBER) AS AverageTPS,
+       ROUND(
+               (
+                   json_value(br.RESULTS_JSON, '$.Results.Overview.AverageTransactionsPerSecond' RETURNING NUMBER) -
+                   LAG(json_value(br.RESULTS_JSON, '$.Results.Overview.AverageTransactionsPerSecond' RETURNING NUMBER), 1)
+                       OVER (ORDER BY RECORDING_TIME)
+                   ) /
+               NULLIF(
+                       LAG(json_value(br.RESULTS_JSON, '$.Results.Overview.AverageTransactionsPerSecond' RETURNING NUMBER), 1)
+                       OVER (ORDER BY RECORDING_TIME), 0
+               ) *
+               100, 2
+       ) "Percentage Difference from Previous"
+from BENCHMARK_RESULTS br
+```
+Which gives us the following.
+```
+   ID RECORDING_TIME                     AVERAGETPS    Percentage Difference from Previous 
+_____ _______________________________ _____________ ______________________________________ 
+   86 15-APR-25 13.36.03.438917000           183.27                                        
+   87 15-APR-25 13.36.41.229173000           284.13                                  55.03 
+   88 15-APR-25 13.37.37.215548000            656.6                                 131.09
+```
+The use of JSON documents stored in the database adds a huge amount of flexibility to analyzing the results of benchmark runs without the need to parse XML or JSON files. 
+
 ### Fixing problems with sbutil
 It is possible that you may run into problems during the creation of the schema for any number of reasons i.e. run out of space, not enough temp space to create indexes etc. Since the creation of a schema using the waizards can take along time I've create a utility ```sbutil``` to solve many of the common issues as well as provide a tool to change the shape of the created schema by increasing it's size, enabling compression or even partitioning the data. SBUtil is located in the bin directory. The following command validates a newly created schema
 ```shell script
