@@ -9,6 +9,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -42,11 +43,18 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
 
     public void logon(Connection connection, long custid) throws SQLException {
         // This is run this way because we want to commit a logon but have a seperate context from the main transaction for AC.
-        try (CallableStatement insLogon = connection.prepareCall("{call orderentry.autonomousLogon(?)}")) {
+        try (CallableStatement insLogon = connection.prepareCall("{call autonomousLogon(?,?,?)}");
+             PreparedStatement ps = connection.prepareStatement("select logon_seq.nextval from dual")) {
+            long seqVal = 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                seqVal = rs.getLong(1);
+            };
             insLogon.setLong(1, custid);
+            insLogon.setLong(2, seqVal);
+            insLogon.setDate(3, new Date(System.currentTimeMillis()));
             insLogon.executeUpdate();
         }
-        connection.commit();
     }
 
     public void getMaxandMinCustID(Connection connection, Map<String, Object> params) throws SQLException {
@@ -239,7 +247,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                         "        INVOICE_ADDRESS_ID           \n" +
                         "      from orders           \n" +
                         "      where customer_id = ?           \n" +
-                        "      and rownum < 5")) {
+                        "      order by ORDER_DATE" +
+                        "      fetch first 5 rows only");) {
             orderPs3.setLong(1, custId);
             try (ResultSet rs = orderPs3.executeQuery()) {
                 while (rs.next()) { // Will only ever be a maximum of 5
@@ -270,7 +279,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                              " from  products, inventories" +
                              " where inventories.product_id = products.product_id" +
                              " and products.product_id = ?" +
-                             " and rownum < 15");
+                             " order BY products.product_id\n" +
+                             "    fetch first 15 rows only");
         ) {
             prodPs.setInt(1, prodID);
             try (ResultSet rs = prodPs.executeQuery()) {
@@ -305,7 +315,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                                 "      where products.category_id = ?           \n" +
                                 "      and inventories.product_id = products.product_id           \n" +
                                 "      and inventories.warehouse_id = ?           \n" +
-                                "      order by products.product_id")) {
+                                "      order by products.product_id" +
+                                "      fetch first 5 rows only")) {
 //                                "      and rownum < 4")) {
             catPs.setInt(1, catID);
             catPs.setInt(2, warehouseId);

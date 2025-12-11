@@ -200,14 +200,17 @@ public class NewCustomerProcess extends OrderEntryProcess {
 //                insPs3.close();
                 addInsertStatements(1);
             }
-            connection.commit();
-            addCommitStatements(1);
+
             thinkSleep();
-            logon(connection, custID);
+            try (PreparedStatement insLogon = connection.prepareStatement("insert into logon (logon_id, customer_id, logon_date) values(logon_seq.nextval,?,sysdate)")) {
+                insLogon.setLong(1, custID);
+                insLogon.executeUpdate();
+            }
             addInsertStatements(1);
-            addCommitStatements(1);
             getCustomerDetails(connection, custID);
             addSelectStatements(1);
+            connection.commit();
+            addCommitStatements(1);
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
         } catch (SQLException sbe) {
             logger.log(Level.FINE, String.format("Exception : %s", sbe.getMessage()));

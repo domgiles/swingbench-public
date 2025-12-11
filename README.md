@@ -8,11 +8,11 @@ If you encounter a problem please create a new issue. in the menu above describi
 * JDK Version (including whether it's OpenJDK or Oracle JDK)
 * what you were trying to do
 * debug information (collected with the command line option "-debug")
-* Screen shots only where necessary, Please don't screen shot an error just copy the text into the issue. 
+* Screenshots only where necessary, Please don't screenshot an error, just copy the text and send this. 
 
 I will also host the latest build of the code at this location as well as the source code for the transactions used in the benchmarks.
 
-For problems please raise an issues on this web site (In menu at the top of this page).
+For problems please raise an issue on this website (In the menu at the top of this page).
 
 ### Installation...
 
@@ -31,6 +31,7 @@ Before you can run a test/benchmark you need to create a schema and install a se
 * moviewizard : Installs a series of tables that models an on-line movie store. It features a mix of rich data types with a mixed workload
 * tpcdswizard : Installs a TPC-DS like schema that is used to create a complex analytics workload
 * tpchwizard : Installs a TPC-H like schema that is used to create a medium complexity analytics workload
+* tpccwizard : Installs a TPC-C like schema that is used to create a heavy transactional workload
 
 To run any of the wizards either double click on the one of the wizards described above if you are running on a GUI with a file manager. Or run it from the command line with
 ```shell script
@@ -62,7 +63,7 @@ After building a schema you should be in a position to run a workload against it
 * **swingbench** : Is a graphically rich frontend that enables you to modify all of the parameters as well as run and monitor the workloads.
 * **minibench** : Is a simpler frontend that enables you to run workloads and monitor but parameters must be set in the command line or by editing the config file.
 * **charbench** : Is a command line only tool where all of the parameters are set on the command line and metrics like latency and throughput are written to standard out or a file.
-To start one of the variants of the load generator simply run a command like the the following
+* **sbweb** : Is a html frontend that enables you to modify all of the parameters as well as run and monitor the workloads. It runs off it's own webserver (Jetty)
 ```shell script
 ./swingbench -c ../configs/SOE_Server_Side_V2.xml
 ``` 
@@ -97,15 +98,82 @@ By default swingbench outputs the results of a run in XML to the "Output" tab in
 
 **NOTE:** In the latest build of charbench now uses colour output to make it easier to highlight errors and parse the output. IT can be disabled with the ```-nc``` command line option. 
 
-### Formatting the Results File
-Whilst XML is simple to parse by a computer it is not necessarily ideal for humans. I supply a utility called ```results2pdf``` in the same bin/winbin directory. This allows you to convert the XML of a run into a pdf file. For example suppose you generated a XML files called results0001.xml to convert it into a pdf file called resultsrun1.pdf you would use a command similar to the own below
-```shell script
-./results2pdf -c results0001.xml -o resultsrun1.pdf
+You can launch the web front end by using the command
+```shell
+./sbweb
 ```
-This will convert some of the data held in the XML file into graphs and nicely formatted tables.
-**NOTE : At this time you'll need to use a JDK 17 to run this utilites. It should run on Linux, Windows and MacOS
+By default it will run off port ```8080``` but you have the option to change it at launch by simply specifying the port number. See the help defintion below.
+```shell
+./sbweb --help
+Usage: WebServer [port] [--config <file>] [--debug]
+  port               Port to listen on (default 8080)
+  --config, -c FILE  Preload this configuration XML into memory for editing/starting
+  --debug            Enable verbose (FINE) logging to stdout
+```
+Open a browser and visit ```http://localhost:8080``` to access the web front end. You should see the following
 
-It's also possible that you might want to compare a number of files and then render the results either as human readable tables or CSV files. For this reason I've included a python script in the utils directory. The choice of python was simply to simplify the modification of the script by a user to control what is is rendered. The script that is shipped will pull out the the key metrics as well as the displaying the average,10th,50th and 90th percentile... If multiple result files are supplied the script will display them next to one another. If you use the ```-c``` or ```--csv``` option it will output in comma seperated format making it easier to load into excel or Google Sheets. 
+![Web Front End Screenshot](https://github.com/domgiles/swingbench-public/blob/master/img/webfrontend.png)
+
+Before running a workload, you must first select a config file from the "Workload" drop down. This will load a memory resident version of the file. This can be modified in the UI or by clicking on the "Edit Config" button. It's worth noting that any changes made to this file will not be saved to disk.
+
+On pressing the "Start Benchmark" button, the user's threads will start running against the target database. When the user presses the stop button or the timers expire, the user session threads will stop running transactions. A short time after this, a window will appear showing the results which have also been stored in the database. You can preview previous runs by clicking on the "Past benchmark runs". This is retrieve a list of previous runs. By clicking on anyone of these runs, you will bring up a report showing some of the runs' key metrics.
+
+### Formatting the Results File
+Whilst XML is simple to parse by a computer it is not necessarily ideal for humans. In the bin/winbin directory you'll find three utilities that will convert XML files or the JSON held in the database into text, pdfs or csv files. These utilities are called ```results2pdf```, ```results2txt``` and ```compareresults2pdf```.
+* **results2pdf** - Takes a single results file and converts it into a pdf version. With the results being presented in tables and graphs. At some stage this will be deprecated. 
+* **results2txt** - Takes a single or multiple results file or ids from results stored in the database and converts them into a series of text tables. If multiple results are given (file or database) they are compared with one another
+* **compareresults2pdf** - Takes a single or multiple results file or ids from results stored in the database and converts them into series of tables and graphs. If multiple results are given (file or database) they are compared with one another
+To list previous workloads held in the database use a command similar to  
+```shell script
+./compareresults2pdf -u soe -p soe -cs //localhost/soe --list
+
+== Available Runs ==
++----+---------------------+--------------------------------------+
+| ID | Recording Time      | Recording Name                       |
++----+---------------------+--------------------------------------+
+| 41 | 2025-11-07 09:28:00 | "Order Entry (PLSQL) V2" - Charbench |
+| 22 | 2025-11-06 15:50:54 | "Order Entry (PLSQL) V2" - Charbench |
+| 21 | 2025-11-06 15:50:20 | "Order Entry (PLSQL) V2" - Charbench |
+| 1  | 2025-11-06 15:45:35 | "Order Entry (PLSQL) V2" - Web UI    |
++----+---------------------+--------------------------------------+
+```
+To compare previous runs run a command similar to  
+```shell script
+./compareresults2pdf -u soe -p soe -cs //localhost/soe --ids 21,22,41
+PDF written to: /Users/dgiles/java/swingbench/swingbench/bin/results_comparison.pdf
+```
+Or if you want to generate a pdf report of comparison of results files run a command like 
+```shell script
+./compareresults2pdf -f results27102024.xml,results27102025.xml,results27102026.xml
+PDF written to: /Users/dgiles/java/swingbench/swingbench/bin/results_comparison.pdf
+```
+To generate text output you can run a similar command to
+```shell
+./results2txt -f results27102024.xml,results27102025.xml,results27102026.xml
+
+== Overview ==
++----------------+--------------------------+--------------------------+--------------------------+
+| Metric         | results27102026.xml (-)  | results27102025.xml (-)  | results27102024.xml (-)  |
++----------------+--------------------------+--------------------------+--------------------------+
+| Recording Name | "Order Entry (PLSQL) V2" | "Order Entry (PLSQL) V2" | "Order Entry (PLSQL) V2" |
+| Avg TPS        | 1904.5                   | 1920.6                   | 1604.8                   |
+| Total Txns     | 38089                    | 38411                    | 32095                    |
+| Failed Txns    | 0                        | 0                        | 0                        |
+| Run Time       | 0:00:20                  | 0:00:20                  | 0:00:20                  |
+| Users          | 120                      | 160                      | 160                      |
+| Time Of Run    | 31 Oct 2025, 15:27:29    | 31 Oct 2025, 15:26:45    | 31 Oct 2025, 15:24:56    |
++----------------+--------------------------+--------------------------+--------------------------+
+
+== DML Totals ==
++--------------------+---------------------+---------------------+---------------------+
+| DML Metric         | results27102026.xml | results27102025.xml | results27102024.xml |
++--------------------+---------------------+---------------------+---------------------+
+| SelectStatements   | 157702              | 158989              | 133047              |
+```
+
+**NOTE** : At this time you'll need to use a JDK 17 to run this utilites. It should run on Linux, Windows and MacOS
+
+I've also included a python script in the utils directory. The choice of python was simply to simplify the modification of the script by a user to control what is is rendered. The script that is shipped will pull out the the key metrics as well as the displaying the average,10th,50th and 90th percentile... If multiple result files are supplied the script will display them next to one another. If you use the ```-c``` or ```--csv``` option it will output in comma seperated format making it easier to load into excel or Google Sheets. 
 ```shell script
 python parse_results.py -r ../bin/results.xml ../bin/results00001.xml 
 +-------------------------------------------+--------------------------+--------------------------+
@@ -145,31 +213,12 @@ python parse_results.py -r ../bin/results.xml ../bin/results00001.xml
 | Browse Products                           |           3.00           |           3.00           |
 | Browse Orders                             |           2.00           |           2.00           |
 | Process Orders                            |           4.00           |           3.00           |
-|                                           |                          |                          |
-| 50th Percentile Transaction Response Time |                          |                          |
-| Order Products                            |          13.00           |          11.00           |
-| Warehouse Activity Query                  |           5.00           |           6.00           |
-| Customer Registration                     |           7.00           |           5.00           |
-| Update Customer Details                   |           2.00           |           2.00           |
-| Sales Rep Query                           |           2.00           |           2.00           |
-| Warehouse Query                           |           2.00           |           2.00           |
-| Browse Products                           |           7.00           |           5.00           |
-| Browse Orders                             |           4.00           |           4.00           |
-| Process Orders                            |           5.00           |           4.00           |
-|                                           |                          |                          |
-| 90th Percentile Transaction Response Time |                          |                          |
-| Order Products                            |          23.00           |          17.00           |
-| Warehouse Activity Query                  |           9.00           |           9.00           |
-| Customer Registration                     |          11.00           |           8.00           |
-| Update Customer Details                   |           5.00           |           3.00           |
-| Sales Rep Query                           |           6.00           |           4.00           |
-| Warehouse Query                           |           5.00           |           4.00           |
-| Browse Products                           |          13.00           |          10.00           |
-| Browse Orders                             |           9.00           |           7.00           |
-| Process Orders                            |           9.00           |           6.00           |
-+-------------------------------------------+--------------------------+--------------------------+
+
 ```
 ### Analyzing the results with SQL
+
+**NOTE :** From November 2025 you can also use the web front end to preview previous runs (see above).
+
 Starting with the April 2025 release every execution of swingbench/charbench/minibench stores the results in the Oracle Database as a JSON document in a table called ```BENCHMARK_RESULTS```. These results can be trivially queried using SQL and via Oracle's support for dot notation. You will need an Oracle Database 19c or higher version for this functionality to work.
 For example after running the SOE benchmark you can query the ```BENCHMARK_RESULTS``` table with a piece of SQL similar to the following
 ```sql
@@ -238,6 +287,9 @@ _____ _______________________________ _____________ ____________________________
 The use of JSON documents stored in the database adds a huge amount of flexibility to analyzing the results of benchmark runs without the need to parse XML or JSON files. 
 
 ### Fixing problems with sbutil
+
+**NOTE :** Currently sbutil only addresses duplication of data for SOE and SH schemas.
+
 It is possible that you may run into problems during the creation of the schema for any number of reasons i.e. run out of space, not enough temp space to create indexes etc. Since the creation of a schema using the waizards can take along time I've create a utility ```sbutil``` to solve many of the common issues as well as provide a tool to change the shape of the created schema by increasing it's size, enabling compression or even partitioning the data. SBUtil is located in the bin directory. The following command validates a newly created schema
 ```shell script
 ./sbutil -soe -cs //localhost/soe -soe -u soe -p soe -val
