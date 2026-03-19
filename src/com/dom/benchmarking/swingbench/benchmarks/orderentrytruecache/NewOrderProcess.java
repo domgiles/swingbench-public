@@ -1,8 +1,5 @@
 package com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache;
 
-import com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache.OrderEntryProcess;
-import com.dom.benchmarking.swingbench.benchmarks.orderentrytruecache.ProductDetails;
-import com.dom.benchmarking.swingbench.configuration.Configuration;
 import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
@@ -180,7 +177,7 @@ public class NewOrderProcess extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
 

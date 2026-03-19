@@ -83,7 +83,7 @@ public class BrowseMoviesByGenre extends MovieStream {
     }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
 
     }
 }

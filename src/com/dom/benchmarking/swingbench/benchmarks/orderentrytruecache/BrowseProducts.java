@@ -5,7 +5,6 @@ import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import oracle.sql.TRANSDUMP;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,7 +16,7 @@ import java.util.logging.Logger;
 public class BrowseProducts extends OrderEntryProcess {
     private static final Logger logger = Logger.getLogger(com.dom.benchmarking.swingbench.benchmarks.orderentryplsql.BrowseProducts.class.getName());
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
 
 //        logger.log(Level.FINE, String.format("Prefetch size is %d", ((OracleConnection)connection).getDefaultRowPrefetch()));
@@ -28,7 +27,7 @@ public class BrowseProducts extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         boolean USE_TRUECACHE_CON = Boolean.parseBoolean((String) params.get("USE_TRUECACHE_CON"));
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
@@ -66,6 +65,6 @@ public class BrowseProducts extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

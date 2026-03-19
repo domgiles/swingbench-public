@@ -7,13 +7,11 @@ import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.Arrays;
-import java.util.DoubleSummaryStatistics;
 import java.util.Map;
 
 import oracle.jdbc.OracleTypes;
@@ -23,13 +21,13 @@ public class StoredProcedure1 extends DatabaseTransaction {
     public StoredProcedure1() {
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         int queryTimeOut = 60;
 

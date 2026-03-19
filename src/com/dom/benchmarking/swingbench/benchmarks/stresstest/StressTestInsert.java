@@ -51,7 +51,7 @@ public final class StressTestInsert extends StressTest {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
 
     }
 }

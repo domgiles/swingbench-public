@@ -69,6 +69,6 @@ public class ProductSalesRollupCube extends SalesHistory {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

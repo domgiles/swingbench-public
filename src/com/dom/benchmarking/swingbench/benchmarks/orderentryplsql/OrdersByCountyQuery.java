@@ -19,10 +19,10 @@ public class OrdersByCountyQuery extends OrderEntryProcess {
         super();
     }
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
 
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         initJdbcTask();
@@ -58,6 +58,6 @@ public class OrdersByCountyQuery extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

@@ -22,11 +22,11 @@ public class UpdateCustomerDetails extends OrderEntryProcess {
 
     private static final Logger logger = Logger.getLogger(UpdateCustomerDetails.class.getName());
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
     @Override
-    public void init(Map params) throws SwingBenchException {
+    public void init(Map<String, Object> params) throws SwingBenchException {
         try {
             loadSampleData(params);
         } catch (java.io.FileNotFoundException fne) {
@@ -39,7 +39,7 @@ public class UpdateCustomerDetails extends OrderEntryProcess {
     }
 
     @Override
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
 
         String uuid;
         OracleShardingKey key;

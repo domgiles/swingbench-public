@@ -20,7 +20,7 @@ public class NewOrderProcess extends OrderEntryProcess {
     public NewOrderProcess() {
     }
 
-    public void init(Map params) throws SwingBenchException {
+    public void init(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         String param = (String) params.get("SOE_IS_STATIC");
         boolean isStatic = (param != null) ? Boolean.valueOf(param) : false;
@@ -34,7 +34,7 @@ public class NewOrderProcess extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         int queryTimeOut = 60;
 
@@ -74,6 +74,6 @@ public class NewOrderProcess extends OrderEntryProcess {
 
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

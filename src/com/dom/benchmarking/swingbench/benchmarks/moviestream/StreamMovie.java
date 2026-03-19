@@ -4,16 +4,12 @@ import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import oracle.sql.NUMBER;
-import oracle.ucp.proxy.annotation.Pre;
 
 import javax.jms.JMSException;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonValue;
 import java.io.IOException;
 import java.sql.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -112,7 +108,7 @@ public class StreamMovie extends MovieStream {
     }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
 
     }
 }

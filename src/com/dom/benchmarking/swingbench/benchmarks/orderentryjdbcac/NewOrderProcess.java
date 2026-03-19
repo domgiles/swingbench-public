@@ -172,7 +172,7 @@ public class NewOrderProcess extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
 

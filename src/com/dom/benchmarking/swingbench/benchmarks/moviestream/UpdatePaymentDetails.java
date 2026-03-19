@@ -6,14 +6,10 @@ import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 
 import javax.jms.JMSException;
-import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Map;
 import java.util.logging.Level;
@@ -94,7 +90,7 @@ public class UpdatePaymentDetails extends MovieStream {
     }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
 
     }
 }

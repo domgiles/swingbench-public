@@ -37,7 +37,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
     }
 
     @Override
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
 
         String uuid;
         OracleShardingKey key;
@@ -89,7 +89,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
 }

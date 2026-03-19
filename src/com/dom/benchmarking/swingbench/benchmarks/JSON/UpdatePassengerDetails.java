@@ -12,10 +12,8 @@ import oracle.soda.OracleDocument;
 import oracle.soda.rdbms.OracleRDBMSClient;
 import oracle.sql.json.*;
 
-import javax.json.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -181,7 +179,7 @@ public class UpdatePassengerDetails extends DatabaseTransaction {
 //    }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
         // TODO Implement this method
     }
 }

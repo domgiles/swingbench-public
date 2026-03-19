@@ -149,7 +149,7 @@ public class UpdateCustomerDetails extends OrderEntryProcess {
     }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
         // TODO Implement this method
     }
 }

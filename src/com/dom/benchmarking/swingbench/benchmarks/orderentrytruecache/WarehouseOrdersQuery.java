@@ -23,10 +23,10 @@ public class WarehouseOrdersQuery extends OrderEntryProcess {
         super();
     }
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         boolean USE_TRUECACHE_CON = Boolean.parseBoolean((String) params.get("USE_TRUECACHE_CON"));
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
@@ -66,6 +66,6 @@ public class WarehouseOrdersQuery extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

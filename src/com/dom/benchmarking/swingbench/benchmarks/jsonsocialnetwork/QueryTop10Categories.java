@@ -131,6 +131,6 @@ public class QueryTop10Categories extends DatabaseTransaction {
 	}
 
 	@Override
-	public void close() {
+	public void close(Map<String, Object> param) {
 	}
 }

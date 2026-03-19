@@ -21,7 +21,7 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
     public BrowseAndUpdateOrders() {
     }
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         try {
             this.getMaxandMinCustID(connection, params);
@@ -30,7 +30,7 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         long custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
         initJdbcTask();
@@ -97,6 +97,6 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

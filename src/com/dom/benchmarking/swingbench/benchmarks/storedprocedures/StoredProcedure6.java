@@ -20,13 +20,13 @@ public class StoredProcedure6 extends DatabaseTransaction {
     public StoredProcedure6() {
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         int queryTimeOut = 60;
 

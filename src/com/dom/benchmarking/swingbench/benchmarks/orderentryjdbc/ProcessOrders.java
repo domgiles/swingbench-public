@@ -23,13 +23,13 @@ public class ProcessOrders extends OrderEntryProcess {
     public ProcessOrders() {
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
     public void init(Map parameters) {
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
 

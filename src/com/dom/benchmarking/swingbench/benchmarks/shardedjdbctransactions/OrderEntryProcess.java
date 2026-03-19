@@ -5,6 +5,8 @@ import com.dom.benchmarking.swingbench.kernel.DatabaseTransaction;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.util.OracleUtilities;
 import oracle.ucp.jdbc.PoolDataSource;
+import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
+import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -66,8 +68,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                     PoolDataSource ods = (PoolDataSource) params.get(SwingBenchTask.CONNECTION_POOL);
                     String uuid = UUID.randomUUID().toString();
                     String url = "jdbc:oracle:thin:@" + params.get("CATALOGUE_URL");
-                    String username = (String) params.get("CATALOGUE_USERNAME");
-                    String password = (String) params.get("CATALOGUE_PASSWORD");
+                    String username = (String) params.getOrDefault(SwingBenchTask.USERNAME, params.get("CATALOGUE_USERNAME"));
+                    String password = (String) params.getOrDefault(SwingBenchTask.PASSWORD, params.get("CATALOGUE_PASSWORD"));
                     try (Connection connection = OracleUtilities.getConnection(username, password, url);
 //                         PreparedStatement ps = connection.prepareStatement("select customer_Id from customers sample(20) where rownum <= " + sampleSize)) {
                          PreparedStatement ps = connection.prepareStatement("select o.customer_id,c.rw_dbnum from (SELECT   i.customer_id\n" +
@@ -78,12 +80,45 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                                 String ci = rs.getString(1);
                                 sampledCustomerIds.add(ci);
                                 String shardNo = String.valueOf(rs.getInt(2));
-                                logger.fine("Sample customer Id added is: "+ci+ " Shard No:"+ String.valueOf(rs.getInt(2)));
+                                //logger.fine("Sample customer Id added is: "+ci+ " Shard No:"+ String.valueOf(rs.getInt(2)));
                                 //CustomerIdsmap.put(ci,shardNo);
                             }
                         }
                     }
                     logger.fine("Completed reading sample Customer IDs. Size = " + sampledCustomerIds.size());
+                }
+            }
+        }
+    }
+
+    protected String nextSampledCustomerId(Map<String, Object> params) throws SwingBenchException {
+        ensureSampledCustomers(params);
+        int size = sampledCustomerIds.size();
+        if (size == 0) {
+            throw new SwingBenchException("Sampled customer list is empty. Check catalogue connection and sampling configuration.");
+        }
+        return sampledCustomerIds.get(RandomGenerator.randomInteger(0, size));
+    }
+
+
+
+    private void appendIfPresent(Map<String, Object> params, StringBuilder sb, String paramKey, String label) {
+        Object value = params.get(paramKey);
+        if (value != null) {
+            sb.append(", ").append(label).append("=").append(value);
+        }
+    }
+
+    private void ensureSampledCustomers(Map<String, Object> params) throws SwingBenchException {
+        if (sampledCustomerIds == null || sampledCustomerIds.isEmpty()) {
+            synchronized (orderEntryLock) {
+                if (sampledCustomerIds == null || sampledCustomerIds.isEmpty()) {
+                    try {
+                        sampleCustomerIds(params);
+                    } catch (SQLException e) {
+                        logger.fine( "Unable to sample customer ids");
+                        throw new SwingBenchException(e);
+                    }
                 }
             }
         }

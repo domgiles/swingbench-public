@@ -5,15 +5,12 @@ import com.dom.benchmarking.swingbench.kernel.DatabaseTransaction;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import com.dom.util.OracleUtilities;
 import oracle.soda.OracleCollection;
 import oracle.soda.OracleDatabase;
 import oracle.soda.OracleDocument;
 import oracle.soda.rdbms.OracleRDBMSClient;
 import oracle.sql.json.OracleJsonObject;
-import org.json.JSONObject;
 
-import javax.json.JsonObject;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
@@ -92,7 +89,7 @@ public class GetPassengerDetails extends DatabaseTransaction {
     }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
         // TODO Implement this method
     }
 }

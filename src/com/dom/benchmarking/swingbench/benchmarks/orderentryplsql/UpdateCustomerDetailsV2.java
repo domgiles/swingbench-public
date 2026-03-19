@@ -36,11 +36,11 @@ public class UpdateCustomerDetailsV2 extends OrderEntryProcess {
     public UpdateCustomerDetailsV2() {
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
     @Override
-    public void init(Map params) throws SwingBenchException {
+    public void init(Map<String, Object> params) throws SwingBenchException {
         boolean initCompleted = false;
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         try {
@@ -92,7 +92,7 @@ public class UpdateCustomerDetailsV2 extends OrderEntryProcess {
     }
 
     @Override
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         //        FUNCTION updateCustomerDetails(
         //            p_fname customers.cust_first_name%type,
         //            p_lname customers.cust_last_name%type,

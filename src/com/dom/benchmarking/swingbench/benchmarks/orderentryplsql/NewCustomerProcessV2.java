@@ -44,7 +44,7 @@ public class NewCustomerProcessV2 extends OrderEntryProcess {
     public NewCustomerProcessV2() {
     }
 
-    public void init(Map params) throws SwingBenchException {
+    public void init(Map<String, Object> params) throws SwingBenchException {
         boolean initCompleted = false;
 
         if ((firstNames == null) || !initCompleted) { // load any data you might need (in this case only once)
@@ -101,7 +101,7 @@ public class NewCustomerProcessV2 extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
 
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         int queryTimeOut = 60;
@@ -155,7 +155,7 @@ public class NewCustomerProcessV2 extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
     private class NLSSupport {

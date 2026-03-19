@@ -6,13 +6,10 @@ import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 
 import javax.jms.JMSException;
-import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,7 +56,7 @@ public class BrowseMovies extends MovieStream {
 
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
 
     }
 }

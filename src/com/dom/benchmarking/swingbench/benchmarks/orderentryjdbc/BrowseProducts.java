@@ -5,11 +5,9 @@ import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import oracle.jdbc.OracleConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLRecoverableException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,7 +16,7 @@ import java.util.logging.Logger;
 public class BrowseProducts extends OrderEntryProcess {
     private static final Logger logger = Logger.getLogger(BrowseProducts.class.getName());
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
 
 //        logger.log(Level.FINE, String.format("Prefetch size is %d", ((OracleConnection)connection).getDefaultRowPrefetch()));
@@ -29,20 +27,13 @@ public class BrowseProducts extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
 
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
         initJdbcTask();
         long executeStart = System.nanoTime();
 
         try {
-
-//            ((OracleConnection)connection).setDefaultRowPrefetch(20);
-//            The following shouldn't log on. We may have to feature one that does. But this transaction should be read only.
-//            custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
-//            logon(connection, custID);
-//            addInsertStatements(1);
-//            addCommitStatements(1);
             long custID = 0;
             getCustomerDetails(connection, custID);
             addSelectStatements(1);
@@ -57,9 +48,6 @@ public class BrowseProducts extends OrderEntryProcess {
             }
 
             processTransactionEvent(new JdbcTaskEvent(this, getId(), (System.nanoTime() - executeStart), true, getInfoArray()));
-
-//            throw new SQLException("This is  a test message", "Test", 4063);
-
         } catch (SQLException se) {
             logger.log(Level.FINE, String.format("Exception : ", se.getMessage()));
             logger.log(Level.FINEST, "SQLException thrown : ", se);
@@ -68,6 +56,6 @@ public class BrowseProducts extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 }

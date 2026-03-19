@@ -4,19 +4,12 @@ import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.DatabaseTransaction;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
-import com.dom.datagen.constants.Constants;
-import com.dom.datagen.kernel.utilities.Random;
-import com.dom.util.Utilities;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -107,6 +100,6 @@ public class QueryArticlePerPeople extends DatabaseTransaction {
 	}
 
 	@Override
-	public void close() {
+	public void close(Map<String, Object> param) {
 	}
 }

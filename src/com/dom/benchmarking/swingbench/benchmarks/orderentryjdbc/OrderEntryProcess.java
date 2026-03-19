@@ -17,8 +17,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
     static final int MIN_CATEGORY = 1;
     static final int MAX_CATEGORY = 199;
     static final int MAX_BROWSE_CATEGORY = 24;
-    static final int MAX_CREDITLIMIT = 5000;
-    static final int MIN_CREDITLIMIT = 100;
+    static final int MAX_CREDITLIMIT = 50000;
+    static final int MIN_CREDITLIMIT = 1000;
     static final int MIN_SALESID = 145;
     static final int MAX_SALESID = 171;
     static final int MIN_PRODS_TO_BUY = 2;

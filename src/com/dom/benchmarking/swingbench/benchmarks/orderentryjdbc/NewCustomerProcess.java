@@ -223,7 +223,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
     private class NLSSupport {

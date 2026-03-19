@@ -22,7 +22,7 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
     public BrowseAndUpdateOrders() {
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
     public void init(Map<String, Object> params) {
@@ -36,7 +36,7 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
 
         int queryTimeOut = 60;

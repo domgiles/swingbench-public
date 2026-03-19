@@ -22,7 +22,7 @@ public class NewOrderProcess extends OrderEntryProcess {
     private static final Logger logger = Logger.getLogger(NewOrderProcess.class.getName());
 
     @Override
-    public void init(Map params) throws SwingBenchException {
+    public void init(Map<String, Object> params) throws SwingBenchException {
         try {
             loadSampleData(params);
         } catch (java.io.FileNotFoundException fne) {
@@ -34,7 +34,7 @@ public class NewOrderProcess extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         String uuid;
         OracleShardingKey key;
         PoolDataSource ods = (PoolDataSource) params.get(SwingBenchTask.CONNECTION_POOL);
@@ -76,7 +76,7 @@ public class NewOrderProcess extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
 

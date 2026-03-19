@@ -33,7 +33,7 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
     }
 
     @Override
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         int queryTimeOut = checkForNull((Integer) params.get(QUERY_TIMEOUT), 60);
         PoolDataSource ods = (PoolDataSource) params.get(SwingBenchTask.CONNECTION_POOL);
         String uuid = sampledCustomerIds.get(RandomGenerator.randomInteger(0, sampledCustomerIds.size()));
@@ -71,7 +71,7 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
         }
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
 }

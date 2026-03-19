@@ -4,17 +4,14 @@ import com.dom.benchmarking.swingbench.event.JdbcTaskEvent;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchException;
 import com.dom.benchmarking.swingbench.kernel.SwingBenchTask;
 import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
-import com.dom.util.Utilities;
 
 import javax.jms.JMSException;
 import javax.json.JsonObject;
-import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +64,7 @@ public class BrowseMoviesByActor extends MovieStream{
     }
 
     @Override
-    public void close() {
+    public void close(Map<String, Object> param) {
 
     }
 }

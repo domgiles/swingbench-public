@@ -106,6 +106,6 @@ public class DeleteExistingArticle extends DatabaseTransaction {
 	}
 
 	@Override
-	public void close() {
+	public void close(Map<String, Object> param) {
 	}
 }

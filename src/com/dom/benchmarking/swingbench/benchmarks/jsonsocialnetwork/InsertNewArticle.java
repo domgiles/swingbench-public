@@ -8,7 +8,6 @@ import com.dom.benchmarking.swingbench.utilities.RandomGenerator;
 import com.dom.datagen.constants.Constants;
 import com.dom.datagen.kernel.utilities.Random;
 import com.dom.util.Utilities;
-import oracle.jdbc.OracleTypes;
 import oracle.soda.OracleCollection;
 import oracle.soda.OracleDatabase;
 import oracle.soda.OracleDocument;
@@ -313,7 +312,7 @@ public class InsertNewArticle extends DatabaseTransaction {
 	}
 
 	@Override
-	public void close() {
+	public void close(Map<String, Object> param) {
 	}
 
 	private String getRandomPhone(final Random random) {

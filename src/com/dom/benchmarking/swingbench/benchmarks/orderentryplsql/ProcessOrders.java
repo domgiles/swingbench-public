@@ -23,10 +23,10 @@ public class ProcessOrders extends OrderEntryProcess {
     public ProcessOrders() {
     }
 
-    public void close() {
+    public void close(Map<String, Object> param) {
     }
 
-    public void init(Map params) {
+    public void init(Map<String, Object> params) {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         try {
             this.parseCommitClientSide(params);
@@ -36,7 +36,7 @@ public class ProcessOrders extends OrderEntryProcess {
         }
     }
 
-    public void execute(Map params) throws SwingBenchException {
+    public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(JDBC_CONNECTION);
         int queryTimeOut = 60;
 
