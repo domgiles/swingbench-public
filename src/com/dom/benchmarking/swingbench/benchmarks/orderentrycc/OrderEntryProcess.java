@@ -86,7 +86,6 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                     logger.log(Level.FINE, "Initialising Benchmark Data");
                     PoolDataSource pds = (PoolDataSource) params.get(SwingBenchTask.CONNECTION_POOL);
                     String shardedConnection = (String) params.get("USE_SHARDED_CONNECTION");
-                    String myCountry;
 
                     String value = (String) params.get("SOE_FIRST_NAMES_LOC");
                     File firstNamesFile = new File((value == null) ? FIRST_NAMES_FILE : value);
@@ -116,14 +115,7 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                             nls.territory = st.nextToken();
                             nlsInfo.add(nls);
                         }
-                        Connection connection = null;
-                        if (shardedConnection.equals("true")) {
-                            myCountry = ThreadToCountryCode.getCountryCode(Thread.currentThread().getName());
-                            OracleShardingKey daffKey = pds.createShardingKeyBuilder().subkey(myCountry, OracleType.VARCHAR2).build();
-                            connection = pds.createConnectionBuilder().shardingKey(daffKey).build();
-                        } else {
-                            connection = pds.getConnection();
-                        }
+                        Connection connection = pds.getConnection();
                         if (connection != null) {
                             CustomerIdManager.loadRanges(connection);
                             CustomerIdManager.checkCustomerRanges(connection);
