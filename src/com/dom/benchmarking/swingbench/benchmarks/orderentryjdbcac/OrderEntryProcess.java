@@ -280,7 +280,7 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
                              " where inventories.product_id = products.product_id" +
                              " and products.product_id = ?" +
                              " order BY products.product_id\n" +
-                             "    fetch first 15 rows only");
+                             " fetch first 15 rows only");
         ) {
             prodPs.setInt(1, prodID);
             try (ResultSet rs = prodPs.executeQuery()) {
@@ -298,24 +298,25 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
         int warehouseId = RandomUtilities.randomInteger(MIN_WAREHOUSE_ID, MAX_WAREHOUSE_ID);
         try (
                 PreparedStatement catPs = connection.prepareStatement(
-                        "select   products.PRODUCT_ID,           \n" +
-                                "              PRODUCT_NAME,           \n" +
-                                "              PRODUCT_DESCRIPTION,           \n" +
-                                "              CATEGORY_ID,           \n" +
-                                "              WEIGHT_CLASS,           \n" +
-                                "              WARRANTY_PERIOD,           \n" +
-                                "              SUPPLIER_ID,           \n" +
-                                "              PRODUCT_STATUS,           \n" +
-                                "              LIST_PRICE,           \n" +
-                                "              MIN_PRICE,           \n" +
-                                "              CATALOG_URL,           \n" +
+                        "select  /*+ NO_MERGE(products) INDEX(i PROD_CATEGORY_IX) NO_INDEX(i PRODUCT_INFORMATION_PK) */ \n" +
+                                "              products.PRODUCT_ID, \n" +
+                                "              PRODUCT_NAME, \n" +
+                                "              PRODUCT_DESCRIPTION,  \n" +
+                                "              CATEGORY_ID,  \n" +
+                                "              WEIGHT_CLASS, \n" +
+                                "              WARRANTY_PERIOD,  \n" +
+                                "              SUPPLIER_ID, \n" +
+                                "              PRODUCT_STATUS, \n" +
+                                "              LIST_PRICE, \n" +
+                                "              MIN_PRICE, \n" +
+                                "              CATALOG_URL, \n" +
                                 "              QUANTITY_ON_HAND \n" +
-                                "      from products,           \n" +
-                                "      inventories           \n" +
-                                "      where products.category_id = ?           \n" +
-                                "      and inventories.product_id = products.product_id           \n" +
-                                "      and inventories.warehouse_id = ?           \n" +
-                                "      order by products.product_id" +
+                                "      from products,  \n" +
+                                "      inventories \n" +
+                                "      where products.category_id = ? \n" +
+                                "      and inventories.product_id = products.product_id \n" +
+                                "      and inventories.warehouse_id = ? \n" +
+                                "      order by products.product_id \n" +
                                 "      fetch first 5 rows only")) {
 //                                "      and rownum < 4")) {
             catPs.setInt(1, catID);
