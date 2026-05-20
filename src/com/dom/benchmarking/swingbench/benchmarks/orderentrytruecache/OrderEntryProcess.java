@@ -296,7 +296,8 @@ public abstract class OrderEntryProcess extends DatabaseTransaction {
         int warehouseId = RandomUtilities.randomInteger(MIN_WAREHOUSE_ID, MAX_WAREHOUSE_ID);
         try (
                 PreparedStatement catPs = connection.prepareStatement(
-                        "select   products.PRODUCT_ID,           \n" +
+                        "select /*+ NO_MERGE(products) INDEX(i PROD_CATEGORY_IX) NO_INDEX(i PRODUCT_INFORMATION_PK) */ " +
+                                "              products.PRODUCT_ID,           \n" +
                                 "              PRODUCT_NAME,           \n" +
                                 "              PRODUCT_DESCRIPTION,           \n" +
                                 "              CATEGORY_ID,           \n" +

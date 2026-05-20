@@ -37,37 +37,42 @@ public class ProcessOrders extends OrderEntryProcess {
         try {
             try (PreparedStatement
                          orderPs3 = connection.prepareStatement(
-                    "WITH need_to_process AS            \n" +
-                            "                          (SELECT order_id,            \n" +
-                            "                            /* we're only looking for unprocessed orders */            \n" +
-                            "                            customer_id            \n" +
-                            "                          FROM orders            \n" +
-                            "                          WHERE order_status <= 4            \n" +
-                            "                          AND rownum         <  10            \n" +
-                            "                          )            \n" +
-                            "                        SELECT o.order_id,               \n" +
-                            "                          oi.line_item_id,               \n" +
-                            "                          oi.product_id,               \n" +
-                            "                          oi.unit_price,               \n" +
-                            "                          oi.quantity,               \n" +
-                            "                          o.order_mode,               \n" +
-                            "                          o.order_status,               \n" +
-                            "                          o.order_total,               \n" +
-                            "                          o.sales_rep_id,               \n" +
-                            "                          o.promotion_id,               \n" +
-                            "                          c.customer_id,               \n" +
-                            "                          c.cust_first_name,               \n" +
-                            "                          c.cust_last_name,               \n" +
-                            "                          c.credit_limit,               \n" +
-                            "                          c.cust_email,               \n" +
-                            "                          o.order_date            \n" +
-                            "                        FROM orders o,            \n" +
-                            "                          need_to_process ntp,            \n" +
-                            "                          customers c,            \n" +
-                            "                          order_items oi            \n" +
-                            "                        WHERE ntp.order_id = o.order_id            \n" +
-                            "                        AND c.customer_id  = o.customer_id            \n" +
-                            "                        and oi.order_id (+) = o.order_id");
+                    "WITH need_to_process AS                                          \n" +
+                            "                          (SELECT /*+ INDEX_SS(orders ord_warehouse_ix) */ \n" +
+                            "                            order_id,                                 \n" +
+                            "                            order_mode,                               \n" +
+                            "                            order_status,                             \n" +
+                            "                            order_total,                              \n" +
+                            "                            sales_rep_id,                             \n" +
+                            "                            promotion_id,                             \n" +
+                            "                            customer_id,                              \n" +
+                            "                            order_date                                \n" +
+                            "                          /* unprocessed orders via status skip scan */\n" +
+                            "                          FROM orders                                 \n" +
+                            "                          WHERE order_status <= 4                      \n" +
+                            "                          AND rownum         <  10                     \n" +
+                            "                          )                                           \n" +
+                            "                        SELECT o.order_id,                             \n" +
+                            "                          oi.line_item_id,                             \n" +
+                            "                          oi.product_id,                               \n" +
+                            "                          oi.unit_price,                               \n" +
+                            "                          oi.quantity,                                 \n" +
+                            "                          o.order_mode,                                \n" +
+                            "                          o.order_status,                              \n" +
+                            "                          o.order_total,                               \n" +
+                            "                          o.sales_rep_id,                              \n" +
+                            "                          o.promotion_id,                              \n" +
+                            "                          c.customer_id,                               \n" +
+                            "                          c.cust_first_name,                           \n" +
+                            "                          c.cust_last_name,                            \n" +
+                            "                          c.credit_limit,                              \n" +
+                            "                          c.cust_email,                                \n" +
+                            "                          o.order_date                                 \n" +
+                            "                        FROM need_to_process o                         \n" +
+                            "                        JOIN customers c                               \n" +
+                            "                          ON c.customer_id = o.customer_id              \n" +
+                            "                        LEFT JOIN order_items oi                       \n" +
+                            "                          ON oi.order_id = o.order_id");
                  PreparedStatement updoPs = connection.prepareStatement("update /*+ index(orders, order_pk) */ \n" +
                          "orders \n" +
                          "set order_status = ? \n" +
