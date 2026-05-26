@@ -34,7 +34,7 @@ public class BrowseProducts extends OrderEntryProcess {
         long executeStart = System.nanoTime();
 
         try {
-            long custID = 0;
+            long custID = RandomGenerator.randomLong(MIN_CUSTID, MAX_CUSTID);
             getCustomerDetails(connection, custID);
             addSelectStatements(1);
             thinkSleep();

@@ -80,8 +80,8 @@ public class BrowseAndUpdateOrders extends OrderEntryProcess {
                             upPs.executeUpdate();
                             upPs2.setFloat(1, up);
                             upPs2.setLong(2, selectedOrder);
+                            upPs2.executeUpdate();
                             addUpdateStatements(2);
-
                         }
                     }
                 }

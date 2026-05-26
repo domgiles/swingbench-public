@@ -171,7 +171,7 @@ public class NewCustomerProcess extends OrderEntryProcess {
                 insPs1.setString(13, "Y");
                 insPs1.setString(14, "N");
                 insPs1.setLong(15, addressID);
-                insPs1.setLong(16, custID);
+                insPs1.setLong(16, cardID);
 
                 insPs1.execute();
                 addInsertStatements(1);

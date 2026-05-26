@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 public class ProcessOrders extends OrderEntryProcess {
 
     private static final Logger logger = Logger.getLogger(ProcessOrders.class.getName());
+    private static final Object lock = new Object();
+    private static volatile boolean warehouseBoundsInitialized = false;
     private long orderID;
 
     public ProcessOrders() {
@@ -26,12 +28,30 @@ public class ProcessOrders extends OrderEntryProcess {
     public void close(Map<String, Object> param) {
     }
 
-    public void init(Map parameters) {
+    public void init(Map<String, Object> params) {
+        if (warehouseBoundsInitialized) {
+            return;
+        }
+
+        Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
+        synchronized (lock) {
+            if (warehouseBoundsInitialized) {
+                return;
+            }
+            try {
+                this.getMaxandMinWarehouseID(connection);
+                warehouseBoundsInitialized = true;
+            } catch (SQLException se) {
+                logger.log(Level.SEVERE, "Failed to get max and min warehouse id", se);
+            }
+        }
     }
 
     public void execute(Map<String, Object> params) throws SwingBenchException {
         Connection connection = (Connection) params.get(SwingBenchTask.JDBC_CONNECTION);
+        init(params);
         initJdbcTask();
+        int warehouseId = RandomGenerator.randomInteger(MIN_WAREHOUSE_ID, MAX_WAREHOUSE_ID);
 
         long executeStart = System.nanoTime();
         try {
@@ -49,7 +69,8 @@ public class ProcessOrders extends OrderEntryProcess {
                             "                            order_date                                \n" +
                             "                          /* unprocessed orders via status skip scan */\n" +
                             "                          FROM orders                                 \n" +
-                            "                          WHERE order_status <= 4                      \n" +
+                            "                          WHERE order_status <= 4                     \n" +
+                            "                          AND warehouse_id = ?                         \n" +
                             "                          AND rownum         <  10                     \n" +
                             "                          )                                           \n" +
                             "                        SELECT o.order_id,                             \n" +
@@ -77,16 +98,18 @@ public class ProcessOrders extends OrderEntryProcess {
                          "orders \n" +
                          "set order_status = ? \n" +
                          "where order_id = ?");
-                 ResultSet rs = orderPs3.executeQuery()
             ) {
-                rs.next();
-                orderID = rs.getLong(1);
-                addSelectStatements(1);
-                thinkSleep(); //update the order
-                updoPs.setLong(1, RandomGenerator.randomInteger(AWAITING_PROCESSING + 1, ORDER_PROCESSED));
-                updoPs.setLong(2, orderID);
-                updoPs.execute();
-                addUpdateStatements(1);
+                orderPs3.setInt(1, warehouseId);
+                try (ResultSet rs = orderPs3.executeQuery()) {
+                    rs.next();
+                    orderID = rs.getLong(1);
+                    addSelectStatements(1);
+                    thinkSleep(); //update the order
+                    updoPs.setLong(1, RandomGenerator.randomInteger(AWAITING_PROCESSING + 1, ORDER_PROCESSED));
+                    updoPs.setLong(2, orderID);
+                    updoPs.execute();
+                    addUpdateStatements(1);
+                }
             }
             connection.commit();
             addCommitStatements(1);
